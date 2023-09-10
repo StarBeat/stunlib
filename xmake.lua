@@ -24,10 +24,6 @@ target("stunlib")
     add_headerfiles("include/**.h")
     add_files("src/**.c")
 
-for _, filepath in ipairs(os.files("$(scriptdir)/test/*.c")) do
-    print(filepath)
-end
-
 target("stunlib.test.testvector")
     set_kind("binary")
     
