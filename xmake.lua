@@ -15,7 +15,7 @@ set_optimize("fast")
 add_requires("xnet")
 
 
-target("stun")
+target("stunlib")
     set_kind("shared")
     
     add_packages("xnet")
@@ -28,11 +28,11 @@ for _, filepath in ipairs(os.files("$(scriptdir)/test/*.c")) do
     print(filepath)
 end
 
-target("stun.test.testvector")
+target("stunlib.test.testvector")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
@@ -41,11 +41,11 @@ target("stun.test.testvector")
     add_files("test/testvector_test.c")
 target_end()
 
-target("stun.test.testvector_print")
+target("stunlib.test.testvector_print")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
@@ -54,11 +54,11 @@ target("stun.test.testvector_print")
     add_files("test/testvector_print_test.c")
 target_end()
 
-target("stun.test.realworldpackets")
+target("stunlib.test.realworldpackets")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
@@ -67,24 +67,24 @@ target("stun.test.realworldpackets")
     add_files("test/realworldpackets_test.c")
 target_end()
 
-target("stun.test.stunclient")
+target("stunlib.test.stunlibclient")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
     add_includedirs("include")
     add_files("test/test_utils.c")
-    add_files("test/stunclient_test.c")
+    add_files("test/stunlibclient_test.c")
 target_end()
 
-target("stun.test.turnmessage")
+target("stunlib.test.turnmessage")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
@@ -93,24 +93,24 @@ target("stun.test.turnmessage")
     add_files("test/turnmessage_test.c")
 target_end()
 
-target("stun.test.stunserver")
+target("stunlib.test.stunlibserver")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
     add_includedirs("include")
     add_files("test/test_utils.c")
-    add_files("test/stunserver_test.c")
+    add_files("test/stunlibserver_test.c")
 target_end()
 
-target("stun.test.turnclient")
+target("stunlib.test.turnclient")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
@@ -119,24 +119,24 @@ target("stun.test.turnclient")
     add_files("test/turnclient_test.c")
 target_end()
 
-target("stun.test.stuntrace")
+target("stunlib.test.stunlibtrace")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
     add_includedirs("include")
     add_files("test/test_utils.c")
-    add_files("test/stuntrace_test.c")
+    add_files("test/stunlibtrace_test.c")
 target_end()
 
-target("stun.test.crypto")
+target("stunlib.test.crypto")
     set_kind("binary")
     
-    set_group("stun.test")
-    add_deps("stun")
+    set_group("stunlib.test")
+    add_deps("stunlib")
     add_packages("xnet")
     
     add_includedirs("test")
