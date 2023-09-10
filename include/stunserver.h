@@ -6,7 +6,7 @@
 
 #include "stunlib.h"   /* stun enc/dec and msg formats*/
 #include <stdint.h>
-#include "sockaddr_util.h"
+#include "xnet.h"
 #include "stunclient.h"
 #include "stun_intern.h"
 

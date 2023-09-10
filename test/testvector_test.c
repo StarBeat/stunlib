@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "stunlib.h"
-#include "sockaddr_util.h"
+#include "xnet.h"
 #include "test_utils.h"
 
 

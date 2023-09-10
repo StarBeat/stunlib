@@ -8,7 +8,7 @@
 
 #include "stunlib.h"   /* stun enc/dec and msg formats*/
 #include <stdint.h>
-#include "sockaddr_util.h"
+#include "xnet.h"
 
 #ifdef __cplusplus
 extern "C" {

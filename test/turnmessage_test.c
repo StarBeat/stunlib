@@ -4,7 +4,7 @@
 
 #include "test_utils.h"
 #include "stunlib.h"
-#include "sockaddr_util.h"
+#include "xnet.h"
 
 
 static unsigned char allocate_resp[] =

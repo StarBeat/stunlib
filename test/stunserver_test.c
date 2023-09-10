@@ -4,7 +4,7 @@
 
 
 #include "stunserver.h"
-#include "sockaddr_util.h"
+#include "xnet.h"
 #include "test_utils.h"
 
 #define  MAX_INSTANCES  50

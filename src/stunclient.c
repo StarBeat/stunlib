@@ -36,7 +36,7 @@
 #include "stun_intern.h"
 
 
-#include "sockaddr_util.h"
+#include "xnet.h"
 
 #include <stdio.h>
 #include <stdlib.h>

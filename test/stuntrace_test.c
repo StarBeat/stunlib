@@ -5,7 +5,7 @@
 #include "test_utils.h"
 #include "stunclient.h"
 #include "stuntrace.h"
-#include "sockaddr_util.h"
+#include "xnet.h"
 
 
 static StunMsgId               LastTransId;

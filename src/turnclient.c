@@ -80,7 +80,7 @@
 
 #include "turnclient.h"
 #include "turn_intern.h"
-#include "sockaddr_util.h"
+#include "xnet.h"
 
 
 #define TURN_MAX_ERR_STRLEN    256  /* max size of string in TURN_INFO_FUNC */
