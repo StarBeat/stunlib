@@ -176,11 +176,17 @@ assert_fail(const char* caller,
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/time.h>
 #include <inttypes.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#ifdef _WIN32
+#include <_time.h>
+#else
+#include <sys/time.h>
+#endif
+
 
 #ifdef __APPLE__
 #include <dlfcn.h>
