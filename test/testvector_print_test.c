@@ -6,6 +6,7 @@
 #include "xnet.h"
 #include "test_utils.h"
 
+static const char* test_file = "X:/test_vector.txt";
 
 static unsigned char req[] =
   "\x00\x01\x00\x58"    /*   Request type and message length */
@@ -122,8 +123,7 @@ CTEST(testvector, request_decode)
 {
   StunMessage stunMsg;
   FILE*       file;
-  file = fopen("test_vector.txt", "w+");
-
+  file = fopen(test_file, "w+");
   ASSERT_TRUE( stunlib_DecodeMessage(req,
                                      108,
                                      &stunMsg,
@@ -162,14 +162,14 @@ CTEST(testvector, request_decode)
   ASSERT_TRUE(stunMsg.hasControlled);
   ASSERT_TRUE(stunMsg.controlled.value == tieBreaker);
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 }
 
 
 CTEST(testvector, request_encode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage   stunMsg;
   unsigned char stunBuf[120];
   memset( &stunMsg, 0, sizeof(StunMessage) );
@@ -193,7 +193,7 @@ CTEST(testvector, request_encode)
 
   ASSERT_TRUE(memcmp(stunBuf, req, 108) == 0);
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
@@ -201,7 +201,7 @@ CTEST(testvector, request_encode)
 CTEST(testvector, response_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage stunMsg;
 
   ASSERT_TRUE( stunlib_DecodeMessage(respv4,
@@ -230,7 +230,7 @@ CTEST(testvector, response_decode)
                         max( stunMsg.software.sizeValue,
                              sizeof(software) ) ) == 0);
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
@@ -239,7 +239,7 @@ CTEST(testvector, response_decode)
 CTEST(testvector, response_encode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage   stunMsg;
   unsigned char stunBuf[120];
 
@@ -271,14 +271,14 @@ CTEST(testvector, response_encode)
 
   ASSERT_TRUE(memcmp(stunBuf, respv4, 80) == 0);
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, response_decode_IPv6)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage             stunMsg;
   struct socket_addr a;
   struct socket_addr b;
@@ -319,14 +319,14 @@ CTEST(testvector, response_decode_IPv6)
                         max( stunMsg.software.sizeValue,
                              sizeof(software_resp) ) ) == 0);
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, response_encode_IPv6)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage             stunMsg;
   unsigned char           stunBuf[120];
   struct socket_addr b;
@@ -360,14 +360,14 @@ CTEST(testvector, response_encode_IPv6)
 
   ASSERT_TRUE(memcmp(stunBuf, respv6, 92) == 0);
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, keepalive_resp_encode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage   stunMsg;
   StunMsgId     transId;
   StunIPAddress ipAddr;
@@ -418,14 +418,14 @@ CTEST(testvector, keepalive_resp_encode)
                && (memcmp( stunMsg.xorMappedAddress.addr.v6.addr, ip6Addr,
                            sizeof(ip6Addr) ) == 0) );
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, keepalive_req_encode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMsgId transId;
   uint8_t   encBuf[STUN_MAX_PACKET_SIZE];
   uint32_t  i;
@@ -451,7 +451,7 @@ CTEST(testvector, keepalive_req_encode)
   ASSERT_TRUE(memcmp( encBuf, expected, sizeof(expected) ) == 0);
 
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
@@ -459,7 +459,7 @@ CTEST(testvector, keepalive_req_encode)
 CTEST(testvector, string_software_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   uint8_t     stunBuf[STUN_MAX_PACKET_SIZE];
   const char* testStr[MAX_STRING_TEST] = {"a", "ab", "acb", "abcd", "abcde" };
   StunMessage stunMsg;
@@ -479,13 +479,13 @@ CTEST(testvector, string_software_encode_decode)
                                    sizeof(stunBuf),
                                    (unsigned char*)password,
                                    strlen(password),
-                                   file);
+                                   NULL);
 
     ASSERT_TRUE( stunlib_DecodeMessage(stunBuf,
                                        encLen,
                                        &stunMsg,
                                        NULL,
-                                       file) );
+                                       NULL) );
 
     ASSERT_TRUE( stunlib_checkIntegrity( stunBuf,
                                          encLen,
@@ -498,7 +498,7 @@ CTEST(testvector, string_software_encode_decode)
   }
 
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
@@ -506,7 +506,7 @@ CTEST(testvector, string_software_encode_decode)
 CTEST(testvector, string_nounce_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   uint8_t     stunBuf[STUN_MAX_PACKET_SIZE];
   const char* testStr[MAX_STRING_TEST] = {"a", "ab", "acb", "abcd", "abcde" };
   StunMessage stunMsg;
@@ -527,12 +527,12 @@ CTEST(testvector, string_nounce_encode_decode)
                                    (unsigned char*)password,
                                    strlen(password),
                                    file);
+   ASSERT_TRUE(stunlib_DecodeMessage(stunBuf,
+            encLen,
+            &stunMsg,
+            NULL,
+            file));
 
-    ASSERT_TRUE( stunlib_DecodeMessage(stunBuf,
-                                       encLen,
-                                       &stunMsg,
-                                       NULL,
-                                       file) );
 
     ASSERT_TRUE( stunlib_checkIntegrity( stunBuf,
                                          encLen,
@@ -545,14 +545,14 @@ CTEST(testvector, string_nounce_encode_decode)
   }
 
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, string_realm_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   uint8_t     stunBuf[STUN_MAX_PACKET_SIZE];
   const char* testStr[MAX_STRING_TEST] = {"a", "ab", "acb", "abcd", "abcde" };
   StunMessage stunMsg;
@@ -590,7 +590,7 @@ CTEST(testvector, string_realm_encode_decode)
     ASSERT_TRUE( strcmp(stunMsg.realm.value, testStr[i]) == 0);
   }
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
@@ -598,7 +598,7 @@ CTEST(testvector, string_realm_encode_decode)
 CTEST(testvector, string_username_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   uint8_t     stunBuf[STUN_MAX_PACKET_SIZE];
   const char* testStr[MAX_STRING_TEST] = {"a", "ab", "acb", "abcd", "abcde" };
   StunMessage stunMsg;
@@ -636,14 +636,14 @@ CTEST(testvector, string_username_encode_decode)
     ASSERT_TRUE( strcmp(stunMsg.username.value, testStr[i]) == 0);
   }
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, error_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage   stunMsg;
   unsigned char stunBuf[STUN_MAX_PACKET_SIZE];
 
@@ -684,14 +684,14 @@ CTEST(testvector, error_encode_decode)
                               strlen(testStr[i]) ) == 0) );
   }
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, xor_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage   stunMsg;
   unsigned char stunBuf[STUN_MAX_PACKET_SIZE];
   int           encLen;
@@ -757,7 +757,7 @@ CTEST(testvector, xor_encode_decode)
                && (memcmp( stunMsg.xorMappedAddress.addr.v6.addr, ip6Addr,
                            sizeof(ip6Addr) ) == 0) );
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
@@ -766,7 +766,7 @@ CTEST(testvector, xor_encode_decode)
 CTEST(testvector, transport_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage   stunMsg;
   unsigned char stunBuf[STUN_MAX_PACKET_SIZE];
 
@@ -800,14 +800,14 @@ CTEST(testvector, transport_encode_decode)
                 );
 
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, channel_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage   stunMsg;
   unsigned char stunBuf[STUN_MAX_PACKET_SIZE];
   uint16_t      chan;
@@ -843,7 +843,7 @@ CTEST(testvector, channel_encode_decode)
                  && (stunMsg.channelNumber.rffu == 0) );
   }
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
@@ -851,7 +851,7 @@ CTEST(testvector, channel_encode_decode)
 CTEST(testvector, print)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage stunMsg;
 
   ASSERT_TRUE( stunlib_DecodeMessage(req,
@@ -860,14 +860,14 @@ CTEST(testvector, print)
                                      NULL,
                                      file) );
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, SendIndication)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   struct socket_addr addr;
   unsigned char           stunBuf[200];
   char                    message[] = "Some useful data\0";
@@ -896,7 +896,7 @@ CTEST(testvector, SendIndication)
   ASSERT_TRUE( 0 == memcmp( &stunBuf[msg.data.offset], message, strlen(
                               message) ) );
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
@@ -904,7 +904,7 @@ CTEST(testvector, SendIndication)
 CTEST(testvector, enf_encode_decode)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   StunMessage   stunMsg;
   unsigned char stunBuf[STUN_MAX_PACKET_SIZE];
 
@@ -944,14 +944,14 @@ CTEST(testvector, enf_encode_decode)
 
 
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }
 
 CTEST(testvector, dont_crash_if_atrLen_bogus_on_errors_messages)
 {
   FILE* file;
-  file = fopen("test_vector.txt", "w+");
+  file = fopen(test_file, "w+");
   unsigned char id_000387_src_000097_op_havoc_rep_8[] = {
     0x00, 0x00, 0x00, 0x13, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x7f, 0xff,
     0xff, 0xff, 0xef, 0xff, 0x67, 0x6c, 0x00, 0x01, 0x00, 0x13, 0x00, 0x08,
@@ -984,6 +984,6 @@ CTEST(testvector, dont_crash_if_atrLen_bogus_on_errors_messages)
                   NULL,
                   file) );
   fclose(file);
-  remove("test_vector.txt");
+  remove(test_file);
 
 }

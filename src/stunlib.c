@@ -49,9 +49,11 @@ printError(FILE*       stream,
 {
   va_list ap;
   va_start(ap,fmt);
-
+#ifndef _WIN32
+  //FIXME:win file not stdout.一个无效参数传递给了将无效参数视为严重错误的函数
   vfprintf(stream, fmt, ap);
   fflush(stream);
+#endif // !_WIN32
 
   va_end(ap);
 }
@@ -2079,6 +2081,7 @@ stunlib_DecodeMessage(const uint8_t*  buf,
                restlen);
     return false;     /* Should perhaps be == to avoid extra stuff */
   }
+
   restlen = message->msgHdr.msgLength;
   while (restlen > 0)
   {
@@ -2106,6 +2109,7 @@ stunlib_DecodeMessage(const uint8_t*  buf,
                  sAtr.type,
                  sAtr.length);
     }
+
     switch (sAtr.type)
     {
     case STUN_ATTR_FingerPrint:
@@ -2492,6 +2496,7 @@ stunlib_DecodeMessage(const uint8_t*  buf,
       break;
     }
   }
+
   if (restlen != 0)
   {
     if (stream)

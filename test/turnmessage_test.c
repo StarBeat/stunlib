@@ -110,8 +110,8 @@ CTEST(turnmessage, encode_integrity)
   /*Relay Address*/
   stunMsg.hasXorRelayAddressIPv4 = true;
   stunlib_setIP4Address( &stunMsg.xorRelayAddressIPv4,
-                         htonl( ( (struct sockaddr_in*)&b )->sin_addr.s_addr ),
-                         htons( ( (struct sockaddr_in*)&b )->sin_port ) );
+                         sockaddr_addr_ntohl(&b),
+                         sockaddr_port_ntohs(&b));
 
   /*Lifetime*/
   stunMsg.hasLifetime    = true;
@@ -121,8 +121,8 @@ CTEST(turnmessage, encode_integrity)
   /*Mapped Address*/
   stunMsg.hasXorMappedAddress = true;
   stunlib_setIP4Address( &stunMsg.xorMappedAddress,
-                         htonl( ( (struct sockaddr_in*)&a )->sin_addr.s_addr ),
-                         htons( ( (struct sockaddr_in*)&a )->sin_port ) );
+                         sockaddr_addr_ntohl(&a),
+                         sockaddr_port_ntohs(&a));
 
 
 

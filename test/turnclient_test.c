@@ -2020,7 +2020,8 @@ CTEST(turnclient, sendpacket_un_bound_small_buffer)
   int                     ctx;
   TurnStats_T             stats;
 
-  unsigned char buf[30];
+  // 30 在 win下会导致栈溢出
+  unsigned char buf[40];
   int           offset = 0;
   char          data[] = "Some data to be sendt. Here and there.\0";
   memcpy(buf + offset, data, sizeof data);

@@ -361,9 +361,7 @@ CTEST(testvector, response_encode_IPv6)
                                      96,
                                      (unsigned char*)password,
                                      strlen(password),
-                                     stdout) );
-  
-  stunlib_printBuffer(stdout, (uint8_t*)respv6, 92, "STUNrespv6");
+                                     NULL) );
   ASSERT_TRUE(memcmp(stunBuf, respv6, 92) == 0);
 }
 

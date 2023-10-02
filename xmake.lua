@@ -10,10 +10,8 @@ elseif is_plat("linux") then
     add_defines("CTEST_SEGFAULT")
 end 
 
--- set_optimize("fastest")
-
 add_requires("xnet")
-
+add_cflags("-O2")
 target("stunlib")
     set_kind("shared")
     
