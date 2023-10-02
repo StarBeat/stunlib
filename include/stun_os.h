@@ -15,8 +15,9 @@
 #include <windows.h>
 #endif
 
-
+#include <macro.h>
 #ifdef __cplusplus
+
 extern "C" {
 #else
 #include <stdbool.h>
@@ -29,16 +30,11 @@ typedef CRITICAL_SECTION STUN_MUTEX;
 typedef pthread_mutex_t STUN_MUTEX;
 #endif
 
-bool
-Stun_MutexCreate(STUN_MUTEX* m,
+FUNC_DECL bool Stun_MutexCreate(STUN_MUTEX* m,
                  char*       name);
-bool
-Stun_MutexLock  (STUN_MUTEX* m);
-bool
-Stun_MutexUnlock(STUN_MUTEX* m);
-bool
-Stun_MutexDestroy(STUN_MUTEX* m);
-
+FUNC_DECL bool Stun_MutexLock  (STUN_MUTEX* m);
+FUNC_DECL bool Stun_MutexUnlock(STUN_MUTEX* m);
+FUNC_DECL bool Stun_MutexDestroy(STUN_MUTEX* m);
 
 #ifdef __cplusplus
 }

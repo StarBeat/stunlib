@@ -8,6 +8,5 @@
 
 #pragma once
 
-#define CTEST_SEGFAULT
 #include "ctest.h"
 

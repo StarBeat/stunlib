@@ -43,8 +43,8 @@ CTEST(realworld, integrity_turn_response)
   const char  user[]     = "turnuser";
   const char  password[] = "turnpass";
   const char  realm[]    = "ice.qa";
-  int         keyLen     = 16;
-  char        md5[keyLen];
+  const int         keyLen     = 16;
+  char        md5[16];
 
   ASSERT_TRUE( stunlib_isStunMsg(turnResp, numbytes) );
 

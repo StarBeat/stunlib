@@ -280,10 +280,10 @@ CTEST(testvector, response_decode_IPv6)
   FILE* file;
   file = fopen("test_vector.txt", "w+");
   StunMessage             stunMsg;
-  struct sockaddr_storage a;
-  struct sockaddr_storage b;
+  struct socket_addr a;
+  struct socket_addr b;
 
-  sockaddr_initFromString( (struct sockaddr*)&b,
+  sockaddr_initFromString( (struct socket_addr*)&b,
                            "[2001:db8:1234:5678:11:2233:4455:6677]:32853" );
 
   ASSERT_TRUE( stunlib_DecodeMessage(respv6,
@@ -304,12 +304,12 @@ CTEST(testvector, response_decode_IPv6)
 
   ASSERT_TRUE( stunMsg.hasXorMappedAddress);
 
-  sockaddr_initFromIPv6Int( (struct sockaddr_in6*)&a,
+  sockaddr_initFromIPv6Int( &a,
                             stunMsg.xorMappedAddress.addr.v6.addr,
                             htons(stunMsg.xorMappedAddress.addr.v6.port) );
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&a,
-                               (struct sockaddr*)&b ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&a,
+                               (struct socket_addr*)&b ) );
 
   ASSERT_TRUE( stunMsg.xorMappedAddress.addr.v6.port == port);
 
@@ -329,9 +329,9 @@ CTEST(testvector, response_encode_IPv6)
   file = fopen("test_vector.txt", "w+");
   StunMessage             stunMsg;
   unsigned char           stunBuf[120];
-  struct sockaddr_storage b;
+  struct socket_addr b;
 
-  sockaddr_initFromString( (struct sockaddr*)&b,
+  sockaddr_initFromString( (struct socket_addr*)&b,
                            "[2001:db8:1234:5678:11:2233:4455:6677]:32853" );
   memset( &stunMsg, 0, sizeof(StunMessage) );
   stunMsg.msgHdr.msgType = STUN_MSG_BindResponseMsg;
@@ -347,8 +347,7 @@ CTEST(testvector, response_encode_IPv6)
 
   /*Mapped Address*/
   stunMsg.hasXorMappedAddress = true;
-  stunlib_setIP6Address(&stunMsg.xorMappedAddress,
-                        ( (struct sockaddr_in6*)&b )->sin6_addr.s6_addr,
+  stunlib_setIP6Address(&stunMsg.xorMappedAddress,sockaddr_get_raw(&b),
                         port);
 
   ASSERT_TRUE( stunlib_addSoftware(&stunMsg, software_resp, '\x20') );
@@ -869,21 +868,21 @@ CTEST(testvector, SendIndication)
 {
   FILE* file;
   file = fopen("test_vector.txt", "w+");
-  struct sockaddr_storage addr;
+  struct socket_addr addr;
   unsigned char           stunBuf[200];
   char                    message[] = "Some useful data\0";
   int                     msg_len;
   StunMessage             msg;
 
 
-  sockaddr_initFromString( (struct sockaddr*)&addr,
+  sockaddr_initFromString( (struct socket_addr*)&addr,
                            "1.2.3.4:2345" );
 
   msg_len = stunlib_EncodeSendIndication(stunBuf,
                                          (uint8_t*)message,
                                          sizeof(stunBuf),
                                          strlen(message),
-                                         (struct sockaddr*)&addr);
+                                         (struct socket_addr*)&addr);
   ASSERT_TRUE( msg_len == 52);
   ASSERT_TRUE( stunlib_isStunMsg(stunBuf, msg_len) );
   ASSERT_TRUE( stunlib_DecodeMessage(stunBuf,

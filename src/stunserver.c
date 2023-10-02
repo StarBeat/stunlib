@@ -9,7 +9,7 @@
 bool
 CreateConnectivityBindingResp(StunMessage*           stunMsg,
                               StunMsgId              transactionId,
-                              const struct sockaddr* mappedSockAddr,
+                              const struct socket_addr* mappedSockAddr,
                               uint8_t                reqTrnspCnt,
                               uint8_t                respTrnspCnt,
                               uint8_t                enf_flags,
@@ -36,29 +36,21 @@ CreateConnectivityBindingResp(StunMessage*           stunMsg,
     stunMsg->transCount.reqCnt  = reqTrnspCnt;
   }
 
-  if (mappedSockAddr->sa_family == AF_INET)
+  if (mappedSockAddr->isv4)
   {
     mappedAddr.familyType   =  STUN_ADDR_IPv4Family;
-    mappedAddr.addr.v4.port = ntohs(
-      ( (struct sockaddr_in*)mappedSockAddr )->sin_port);
-    mappedAddr.addr.v4.addr = ntohl(
-      ( (struct sockaddr_in*)mappedSockAddr )->sin_addr.s_addr);
+    mappedAddr.addr.v4.port = sockaddr_port_ntohs(mappedSockAddr);
+    mappedAddr.addr.v4.addr = sockaddr_addr_ntohl(mappedSockAddr);
 
-  }
-  else if (mappedSockAddr->sa_family == AF_INET6)
-  {
-    mappedAddr.familyType   =  STUN_ADDR_IPv6Family;
-    mappedAddr.addr.v6.port = ntohs(
-      ( (struct sockaddr_in6*)mappedSockAddr )->sin6_port);
-
-    /*TODO: will this be correct ? */
-    memcpy( mappedAddr.addr.v6.addr,
-            ( (struct sockaddr_in6*)mappedSockAddr )->sin6_addr.s6_addr,
-            sizeof(mappedAddr.addr.v6.addr) );
   }
   else
   {
-    return false;
+    mappedAddr.familyType   =  STUN_ADDR_IPv6Family;
+    mappedAddr.addr.v6.port = sockaddr_port_ntohs(mappedSockAddr);
+
+    /*TODO: will this be correct ? */
+    memcpy( mappedAddr.addr.v6.addr, sockaddr_get_raw(mappedSockAddr),
+            sizeof(mappedAddr.addr.v6.addr) );
   }
 
   /*id*/
@@ -110,7 +102,7 @@ SendConnectivityBindResponse(STUN_CLIENT_DATA*      clientData,
                              int32_t                globalSocketId,
                              StunMessage*           stunRespMsg,
                              const char*            password,
-                             const struct sockaddr* dstAddr,
+                             const struct socket_addr* dstAddr,
                              void*                  userData,
                              STUN_SENDFUNC          sendFunc,
                              int                    proto,
@@ -159,8 +151,8 @@ StunServer_SendConnectivityBindingResp(STUN_CLIENT_DATA*      clientData,
                                        int32_t                globalSocketId,
                                        StunMsgId              transactionId,
                                        const char*            password,
-                                       const struct sockaddr* mappedAddr,
-                                       const struct sockaddr* dstAddr,
+                                       const struct socket_addr* mappedAddr,
+                                       const struct socket_addr* dstAddr,
                                        uint8_t                reqTrnspCnt,
                                        uint8_t                respTrnspCnt,
                                        uint8_t                enf_flags,

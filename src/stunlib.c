@@ -980,7 +980,7 @@ stunlib_EncodeIndication(uint8_t                msgType,
                          uint8_t*               dataBuf,
                          uint32_t               maxBufSize,
                          uint32_t               payloadLength,
-                         const struct sockaddr* dstAddr)
+                         const struct socket_addr* dstAddr)
 {
   StunMessage   stunMsg;
   StunIPAddress activeDstAddr;
@@ -989,29 +989,21 @@ stunlib_EncodeIndication(uint8_t                msgType,
   memset( &stunMsg, 0, sizeof(StunMessage) );
   stunlib_createId(&stunMsg.msgHdr.id);
 
-  if (dstAddr->sa_family == AF_INET)
+  if (dstAddr->isv4)
   {
 
     activeDstAddr.familyType   =  STUN_ADDR_IPv4Family;
-    activeDstAddr.addr.v4.port = ntohs(
-      ( (struct sockaddr_in*)dstAddr )->sin_port);
-    activeDstAddr.addr.v4.addr = ntohl(
-      ( (struct sockaddr_in*)dstAddr )->sin_addr.s_addr);
-
-  }
-  else if (dstAddr->sa_family == AF_INET6)
-  {
-    activeDstAddr.familyType   =  STUN_ADDR_IPv6Family;
-    activeDstAddr.addr.v6.port = ntohs(
-      ( (struct sockaddr_in6*)dstAddr )->sin6_port);
-    memcpy( activeDstAddr.addr.v6.addr,
-            ( (struct sockaddr_in6*)dstAddr )->sin6_addr.s6_addr,
-            sizeof(activeDstAddr.addr.v6.addr) );
+    activeDstAddr.addr.v4.port = sockaddr_port_ntohs(dstAddr);
+    activeDstAddr.addr.v4.addr = sockaddr_addr_ntohl(dstAddr);
 
   }
   else
   {
-    return 0;
+    activeDstAddr.familyType   =  STUN_ADDR_IPv6Family;
+    activeDstAddr.addr.v6.port = sockaddr_port_ntohs(dstAddr);
+    memcpy( activeDstAddr.addr.v6.addr,sockaddr_get_raw(dstAddr),
+            sizeof(activeDstAddr.addr.v6.addr) );
+
   }
 
   /* STD TURN: sendInd(XorPeerAddr, Data)   no integrity */
@@ -1039,7 +1031,7 @@ stunlib_EncodeSendIndication(uint8_t*               stunBuf,
                              uint8_t*               dataBuf,
                              uint32_t               maxBufSize,
                              uint32_t               payloadLength,
-                             const struct sockaddr* dstAddr)
+                             const struct socket_addr* dstAddr)
 {
   return stunlib_EncodeIndication(
     STUN_MSG_SendIndicationMsg,
@@ -1055,7 +1047,7 @@ stunlib_EncodeDataIndication(uint8_t*               stunBuf,
                              uint8_t*               dataBuf,
                              uint32_t               maxBufSize,
                              uint32_t               payloadLength,
-                             const struct sockaddr* dstAddr)
+                             const struct socket_addr* dstAddr)
 {
   return stunlib_EncodeIndication(
     STUN_MSG_DataIndicationMsg,

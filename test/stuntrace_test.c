@@ -9,8 +9,8 @@
 
 
 static StunMsgId               LastTransId;
-static struct sockaddr_storage LastAddress;
-static struct sockaddr_storage LastHopAddr;
+static struct socket_addr LastAddress;
+static struct socket_addr LastHopAddr;
 static int                     LastTTL;
 static StunMsgId               LastTransId;
 static bool                    Done;
@@ -38,7 +38,7 @@ sendPacket(void*                  ctx,
            int                    sockfd,
            const uint8_t*         buf,
            int                    len,
-           const struct sockaddr* addr,
+           const struct socket_addr* addr,
            int                    proto,
            bool                   useRelay,
            uint8_t                ttl)
@@ -53,10 +53,9 @@ sendPacket(void*                  ctx,
   memcpy(&LastTransId, &buf[8], STUN_MSG_ID_SIZE);
   memcpy(&LastTransId, &buf[8], STUN_MSG_ID_SIZE);
 
-  sockaddr_copy( (struct sockaddr*)&LastAddress, addr );
+  sockaddr_copy( (struct socket_addr*)&LastAddress, addr );
 
   sockaddr_toString(addr, addr_str, SOCKADDR_MAX_STRLEN, true);
-
   LastTTL = ttl;
 }
 
@@ -67,11 +66,11 @@ StunTraceCallBack(void*                    userCtx,
   (void) userCtx;
   if (data->nodeAddr == NULL)
   {
-    sockaddr_copy( (struct sockaddr*)&LastHopAddr, data->nodeAddr );
+    sockaddr_copy( (struct socket_addr*)&LastHopAddr, data->nodeAddr );
   }
   else
   {
-    sockaddr_copy( (struct sockaddr*)&LastHopAddr, data->nodeAddr );
+    sockaddr_copy( (struct socket_addr*)&LastHopAddr, data->nodeAddr );
   }
   Done       = data->done;
   EndOfTrace = data->traceEnd;
@@ -82,13 +81,13 @@ CTEST(stuntrace, null_ptr)
   int               someData   = 3;
   STUN_CLIENT_DATA* clientData = NULL;
 
-  struct sockaddr_storage localAddr, remoteAddr;
+  struct socket_addr localAddr, remoteAddr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
 
@@ -96,8 +95,8 @@ CTEST(stuntrace, null_ptr)
 
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -111,8 +110,8 @@ CTEST(stuntrace, null_ptr)
 
   len = StunTrace_startTrace(clientData,
                              &someData,
-                             (const struct sockaddr*)&remoteAddr,
-                             (const struct sockaddr*)&localAddr,
+                             (const struct socket_addr*)&remoteAddr,
+                             (const struct socket_addr*)&localAddr,
                              sockfd,
                              "test",
                              "tset",
@@ -124,7 +123,7 @@ CTEST(stuntrace, null_ptr)
   len = StunTrace_startTrace(clientData,
                              &someData,
                              NULL,
-                             (const struct sockaddr*)&localAddr,
+                             (const struct socket_addr*)&localAddr,
                              sockfd,
                              "test",
                              "tset",
@@ -139,13 +138,13 @@ CTEST(stuntrace, run_IPv4)
   int               someData = 3;
   STUN_CLIENT_DATA* clientData;
 
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr, hop2Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr, hop2Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -153,8 +152,8 @@ CTEST(stuntrace, run_IPv4)
 
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -168,35 +167,35 @@ CTEST(stuntrace, run_IPv4)
 
 
   StunClient_HandleICMP(NULL,
-                        (struct sockaddr*)&remoteAddr,
+                        (struct socket_addr*)&remoteAddr,
                         3);
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&remoteAddr,
+                        (struct socket_addr*)&remoteAddr,
                         3);
   ASSERT_FALSE(Done);
   ASSERT_FALSE(EndOfTrace);
 
   /* First hop.. */
   ASSERT_TRUE(LastTTL == 1);
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
 
   ASSERT_TRUE( LastTTL == 2);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop2Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop2Addr,
                            "193.200.93.152:45674" );
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop2Addr,
+                        (struct socket_addr*)&hop2Addr,
                         3);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop2Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop2Addr ) );
   ASSERT_TRUE( Done);
   ASSERT_TRUE( EndOfTrace);
 
@@ -209,13 +208,13 @@ CTEST(stuntrace, run_IPv4_unhandled_ICMP)
 
   Done       = false;
   EndOfTrace = false;
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr, hop2Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr, hop2Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -223,8 +222,8 @@ CTEST(stuntrace, run_IPv4_unhandled_ICMP)
 
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -237,35 +236,35 @@ CTEST(stuntrace, run_IPv4_unhandled_ICMP)
 
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&remoteAddr,
+                        (struct socket_addr*)&remoteAddr,
                         3);
   ASSERT_FALSE(Done);
   ASSERT_FALSE(EndOfTrace);
 
   /* First hop.. */
   ASSERT_TRUE(LastTTL == 1);
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
 
   ASSERT_TRUE( LastTTL == 2);
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         5);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop2Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop2Addr,
                            "193.200.93.152:45674" );
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop2Addr,
+                        (struct socket_addr*)&hop2Addr,
                         3);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop2Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop2Addr ) );
   ASSERT_TRUE( Done);
   ASSERT_TRUE( EndOfTrace);
 
@@ -277,13 +276,13 @@ CTEST(stuntrace, recurring_IPv4)
   int               someData = 3;
   STUN_CLIENT_DATA* clientData;
 
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr, hop2Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr, hop2Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -291,8 +290,8 @@ CTEST(stuntrace, recurring_IPv4)
 
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -303,36 +302,36 @@ CTEST(stuntrace, recurring_IPv4)
   ASSERT_TRUE(LastTTL == 40);
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&remoteAddr,
+                        (struct socket_addr*)&remoteAddr,
                         3);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
   ASSERT_FALSE(Done);
   ASSERT_FALSE(EndOfTrace);
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
 
   ASSERT_TRUE( LastTTL == 2);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop2Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop2Addr,
                            "193.200.93.152:45674" );
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop2Addr,
+                        (struct socket_addr*)&hop2Addr,
                         3);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop2Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop2Addr ) );
   ASSERT_FALSE(Done);
   ASSERT_TRUE(EndOfTrace);
 
   ASSERT_TRUE(LastTTL == 1);
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
   ASSERT_FALSE(Done);
   ASSERT_FALSE(EndOfTrace);
@@ -340,10 +339,10 @@ CTEST(stuntrace, recurring_IPv4)
   ASSERT_TRUE(LastTTL == 2);
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop2Addr,
+                        (struct socket_addr*)&hop2Addr,
                         3);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop2Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop2Addr ) );
 
   ASSERT_TRUE( Done);
   ASSERT_TRUE( EndOfTrace);
@@ -354,13 +353,13 @@ CTEST(stuntrace, no_answer_IPv4)
   int               someData = 3;
   STUN_CLIENT_DATA* clientData;
 
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr, hop2Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr, hop2Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -368,8 +367,8 @@ CTEST(stuntrace, no_answer_IPv4)
 
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -378,22 +377,22 @@ CTEST(stuntrace, no_answer_IPv4)
                                  sendPacket);
   ASSERT_TRUE(len != 0);
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&remoteAddr,
+                        (struct socket_addr*)&remoteAddr,
                         3);
 
   /* HOP 1 Answer */
   ASSERT_TRUE(LastTTL == 1);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
   ASSERT_FALSE(Done);
   ASSERT_FALSE(EndOfTrace);
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
   /* HOP 2 No Answer */
   ASSERT_TRUE( LastTTL == 2);
 
@@ -410,15 +409,15 @@ CTEST(stuntrace, no_answer_IPv4)
   /* HOP 3 Answer */
   ASSERT_TRUE(LastTTL == 3);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop2Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop2Addr,
                            "193.200.93.152:45674" );
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop2Addr,
+                        (struct socket_addr*)&hop2Addr,
                         3);
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop2Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop2Addr ) );
 
   ASSERT_TRUE( Done);
   ASSERT_TRUE( EndOfTrace);
@@ -432,13 +431,13 @@ CTEST(stuntrace, no_answer_recurring_IPv4)
   int               someData = 3;
   STUN_CLIENT_DATA* clientData;
 
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr, hop2Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr, hop2Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -446,8 +445,8 @@ CTEST(stuntrace, no_answer_recurring_IPv4)
 
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -457,22 +456,22 @@ CTEST(stuntrace, no_answer_recurring_IPv4)
   ASSERT_TRUE(len != 0);
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&remoteAddr,
+                        (struct socket_addr*)&remoteAddr,
                         3);
 
   /* HOP 1 Answer */
   ASSERT_TRUE(LastTTL == 1);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
   ASSERT_FALSE(Done);
   ASSERT_FALSE(EndOfTrace);
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
   /* HOP 2 No Answer */
   ASSERT_TRUE( LastTTL == 2);
 
@@ -489,15 +488,15 @@ CTEST(stuntrace, no_answer_recurring_IPv4)
   /* HOP 3 Answer */
   ASSERT_TRUE(LastTTL == 3);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop2Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop2Addr,
                            "193.200.93.152:45674" );
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop2Addr,
+                        (struct socket_addr*)&hop2Addr,
                         3);
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop2Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop2Addr ) );
 
   ASSERT_FALSE(Done);
   ASSERT_TRUE(EndOfTrace);
@@ -505,30 +504,30 @@ CTEST(stuntrace, no_answer_recurring_IPv4)
   /* HOP 1 Answer */
   ASSERT_TRUE(LastTTL == 1);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
   ASSERT_FALSE(Done);
   ASSERT_FALSE(EndOfTrace);
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
 
 
   /* HOP 3 Answer */
   ASSERT_TRUE(LastTTL == 3);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop2Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop2Addr,
                            "193.200.93.152:45674" );
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop2Addr,
+                        (struct socket_addr*)&hop2Addr,
                         3);
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop2Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop2Addr ) );
 
   ASSERT_TRUE( Done);
   ASSERT_TRUE( EndOfTrace);
@@ -540,13 +539,13 @@ CTEST(stuntrace, run_IPv4_Stunresp)
   int               someData = 3;
   STUN_CLIENT_DATA* clientData;
 
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr, hop2Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr, hop2Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -555,8 +554,8 @@ CTEST(stuntrace, run_IPv4_Stunresp)
                             NULL);
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -580,26 +579,26 @@ CTEST(stuntrace, run_IPv4_Stunresp)
                            NULL);
   /* First hop.. */
   ASSERT_TRUE(LastTTL == 40);
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
-  ASSERT_FALSE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                                (struct sockaddr*)&hop1Addr ) );
+  ASSERT_FALSE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                                (struct socket_addr*)&hop1Addr ) );
 
   ASSERT_TRUE(LastTTL == 40);
 
-  sockaddr_initFromString( (struct sockaddr*)&hop2Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop2Addr,
                            "193.200.93.152:45674" );
 
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop2Addr,
+                        (struct socket_addr*)&hop2Addr,
                         3);
 
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop2Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop2Addr ) );
   ASSERT_TRUE( Done);
   ASSERT_TRUE( EndOfTrace);
 
@@ -610,13 +609,13 @@ CTEST(stuntrace, run_IPv4_Stunresp_dead)
   int               someData = 3;
   STUN_CLIENT_DATA* clientData;
 
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -624,8 +623,8 @@ CTEST(stuntrace, run_IPv4_Stunresp_dead)
 
   StunTrace_startTrace(clientData,
                        &someData,
-                       (const struct sockaddr*)&remoteAddr,
-                       (const struct sockaddr*)&localAddr,
+                       (const struct socket_addr*)&remoteAddr,
+                       (const struct socket_addr*)&localAddr,
                        sockfd,
                        "test",
                        "tset",
@@ -641,13 +640,13 @@ CTEST(stuntrace, run_IPv4_Stunresp_dead)
 
   /* First hop.. */
   ASSERT_TRUE(LastTTL == 1);
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
 
   ASSERT_TRUE( LastTTL == 2);
 
@@ -685,13 +684,13 @@ CTEST(stuntrace, run_IPv4_Stunresp_end)
   int               someData = 3;
   STUN_CLIENT_DATA* clientData;
 
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -699,8 +698,8 @@ CTEST(stuntrace, run_IPv4_Stunresp_end)
 
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -726,20 +725,20 @@ CTEST(stuntrace, run_IPv4_Stunresp_end)
 
   /* First hop.. */
   ASSERT_TRUE(LastTTL == 40);
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
 
   ASSERT_TRUE( LastTTL == 40);
 
   memcpy(&m.msgHdr.id, &LastTransId, STUN_MSG_ID_SIZE);
   StunClient_HandleIncResp(clientData,
                            &m,
-                           (struct sockaddr*)&remoteAddr);
+                           (struct socket_addr*)&remoteAddr);
 
   ASSERT_TRUE(Done);
   ASSERT_TRUE(EndOfTrace);
@@ -751,13 +750,13 @@ CTEST(stuntrace, run_IPv4_Stunresp_max_ttl)
   int               someData = 3;
   STUN_CLIENT_DATA* clientData;
 
-  struct sockaddr_storage localAddr, remoteAddr, hop1Addr;
+  struct socket_addr localAddr, remoteAddr, hop1Addr;
   int                     sockfd = 4;
 
-  sockaddr_initFromString( (struct sockaddr*)&remoteAddr,
+  sockaddr_initFromString( (struct socket_addr*)&remoteAddr,
                            "193.200.93.152:45674" );
 
-  sockaddr_initFromString( (struct sockaddr*)&localAddr,
+  sockaddr_initFromString( (struct socket_addr*)&localAddr,
                            "192.168.1.34:45674" );
 
   StunClient_Alloc(&clientData);
@@ -765,8 +764,8 @@ CTEST(stuntrace, run_IPv4_Stunresp_max_ttl)
 
   int len = StunTrace_startTrace(clientData,
                                  &someData,
-                                 (const struct sockaddr*)&remoteAddr,
-                                 (const struct sockaddr*)&localAddr,
+                                 (const struct socket_addr*)&remoteAddr,
+                                 (const struct socket_addr*)&localAddr,
                                  sockfd,
                                  "test",
                                  "tset",
@@ -798,13 +797,13 @@ CTEST(stuntrace, run_IPv4_Stunresp_max_ttl)
 
   /* First hop.. */
   ASSERT_TRUE(LastTTL == 40);
-  sockaddr_initFromString( (struct sockaddr*)&hop1Addr,
+  sockaddr_initFromString( (struct socket_addr*)&hop1Addr,
                            "192.168.1.1:45674" );
   StunClient_HandleICMP(clientData,
-                        (struct sockaddr*)&hop1Addr,
+                        (struct socket_addr*)&hop1Addr,
                         11);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastHopAddr,
-                               (struct sockaddr*)&hop1Addr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastHopAddr,
+                               (struct socket_addr*)&hop1Addr ) );
 
   ASSERT_TRUE( Done);
   ASSERT_TRUE( EndOfTrace);
@@ -813,23 +812,23 @@ CTEST(stuntrace, run_IPv4_Stunresp_max_ttl)
 
 CTEST(stuntrace, isDstUnreachable)
 {
-  ASSERT_TRUE( isDstUnreachable(3, AF_INET) );
+  ASSERT_TRUE( isDstUnreachable(3, true) );
 
-  ASSERT_FALSE( isDstUnreachable(5,AF_INET) );
+  ASSERT_FALSE( isDstUnreachable(5,true) );
 
-  ASSERT_TRUE( isDstUnreachable(1, AF_INET6) );
-  ASSERT_FALSE( isDstUnreachable(3, AF_INET6) );
+  ASSERT_TRUE( isDstUnreachable(1, false) );
+  ASSERT_FALSE( isDstUnreachable(3, false) );
 
 }
 
 CTEST(stuntrace, isTimeExceeded)
 {
-  ASSERT_TRUE( isTimeExceeded(11, AF_INET) );
-  ASSERT_FALSE( isTimeExceeded(3, AF_INET) );
-  ASSERT_FALSE( isTimeExceeded(5, AF_INET) );
+  ASSERT_TRUE( isTimeExceeded(11, true) );
+  ASSERT_FALSE( isTimeExceeded(3, true) );
+  ASSERT_FALSE( isTimeExceeded(5, true) );
 
-  ASSERT_TRUE( isTimeExceeded(3, AF_INET6) );
-  ASSERT_FALSE( isTimeExceeded(11, AF_INET6) );
-  ASSERT_FALSE( isTimeExceeded(5, AF_INET6) );
+  ASSERT_TRUE( isTimeExceeded(3, false) );
+  ASSERT_FALSE( isTimeExceeded(11, false) );
+  ASSERT_FALSE( isTimeExceeded(5, false) );
 
 }

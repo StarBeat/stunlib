@@ -9,6 +9,7 @@
 #include "stunlib.h"   /* stun enc/dec and msg formats*/
 #include <stdint.h>
 #include "xnet.h"
+#include <macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,9 +55,9 @@ typedef struct
 {
   StunMsgId               msgId;
   StunResult_T            stunResult;
-  struct sockaddr_storage rflxAddr;
-  struct sockaddr_storage srcAddr;
-  struct sockaddr_storage dstBaseAddr;    /* The destination seen from the
+  struct socket_addr rflxAddr;
+  struct socket_addr srcAddr;
+  struct socket_addr dstBaseAddr;    /* The destination seen from the
                                            * sender of the response */
   uint32_t rtt;                           /* Rtt in microseconds */
   uint32_t reqTransCnt;
@@ -104,13 +105,10 @@ typedef struct {
  *    Should be called (once only) before StunClient_startxxxxxx().
  *    InstanceData - memory allocated by user, to be used by the StunClient.
  */
-bool
-StunClient_Alloc(STUN_CLIENT_DATA** clientDataPtr);
+FUNC_DECL bool StunClient_Alloc(STUN_CLIENT_DATA** clientDataPtr);
 
 
-void
-StunClient_free(STUN_CLIENT_DATA* clientData);
-
+FUNC_DECL void StunClient_free(STUN_CLIENT_DATA* clientData);
 
 /*
  *  initialisation:
@@ -122,8 +120,8 @@ StunClient_free(STUN_CLIENT_DATA* clientData);
  * provide a function such as below::
  *    userData       - void pointer to be returned with logger callback
  */
-void
-StunClient_RegisterLogger(STUN_CLIENT_DATA*  clientData,
+
+FUNC_DECL void StunClient_RegisterLogger(STUN_CLIENT_DATA*  clientData,
                           STUN_INFO_FUNC_PTR logPtr,
                           void*              userData);
 
@@ -160,22 +158,20 @@ StunClient_RegisterLogger(STUN_CLIENT_DATA*  clientData,
  * in further calls to TurnClient_StartChannelBindReq(),
  * TurnClient_HandleIncResp().
  */
-int32_t
-StunClient_startBindTransaction(STUN_CLIENT_DATA*      clientData,
+FUNC_DECL int32_t StunClient_startBindTransaction(STUN_CLIENT_DATA*      clientData,
                                 void*                  userCtx,
-                                const struct sockaddr* serverAddr,
-                                const struct sockaddr* baseAddr,
+                                const struct socket_addr* serverAddr,
+                                const struct socket_addr* baseAddr,
                                 int                    proto,
                                 bool                   useRelay,
                                 TransactionAttributes* transAttr,
                                 STUN_SENDFUNC          sendFunc,
                                 STUNCB                 stunCbFunc);
 
-void
-StunClient_startSTUNTrace(STUN_CLIENT_DATA*      clientData,
+FUNC_DECL void StunClient_startSTUNTrace(STUN_CLIENT_DATA*      clientData,
                           void*                  userCtx,
-                          const struct sockaddr* serverAddr,
-                          const struct sockaddr* baseAddr,
+                          const struct socket_addr* serverAddr,
+                          const struct socket_addr* baseAddr,
                           bool                   useRelay,
                           uint8_t                ttl,
                           TransactionAttributes* transAttr,
@@ -186,8 +182,7 @@ StunClient_startSTUNTrace(STUN_CLIENT_DATA*      clientData,
  * This function must be called by the application every N msec. N must be same
  * as in StunClientBind_Init(instances, N)
  */
-void
-StunClient_HandleTick(STUN_CLIENT_DATA* clientData,
+FUNC_DECL void StunClient_HandleTick(STUN_CLIENT_DATA* clientData,
                       uint32_t          TimerResMsec);
 
 /*
@@ -195,15 +190,13 @@ StunClient_HandleTick(STUN_CLIENT_DATA* clientData,
  *  srcAddr       - Source adress in format  "a.b.c.d:port"
  *
  */
-void
-StunClient_HandleIncResp(STUN_CLIENT_DATA*      clientData,
+FUNC_DECL void StunClient_HandleIncResp(STUN_CLIENT_DATA*      clientData,
                          const StunMessage*     msg,
-                         const struct sockaddr* srcAddr);
+                         const struct socket_addr* srcAddr);
 
 
-void
-StunClient_HandleICMP(STUN_CLIENT_DATA*      clientData,
-                      const struct sockaddr* srcAddr,
+FUNC_DECL void StunClient_HandleICMP(STUN_CLIENT_DATA*      clientData,
+                      const struct socket_addr* srcAddr,
                       uint32_t               ICMPtype);
 
 /*
@@ -213,21 +206,17 @@ StunClient_HandleICMP(STUN_CLIENT_DATA*      clientData,
  *        -  if  no instance found with transactionid, returns
  * STUNCLIENT_CTX_UNKNOWN
  */
-int
-StunClient_cancelBindingTransaction(STUN_CLIENT_DATA* clientData,
+FUNC_DECL int StunClient_cancelBindingTransaction(STUN_CLIENT_DATA* clientData,
                                     StunMsgId         transactionId);
 
 
 
-void
-StunClient_clearStats(STUN_CLIENT_DATA* clientData);
-void
-StunClient_dumpStats(STUN_CLIENT_DATA*  clientData,
+FUNC_DECL void StunClient_clearStats(STUN_CLIENT_DATA* clientData);
+FUNC_DECL void StunClient_dumpStats(STUN_CLIENT_DATA*  clientData,
                      STUN_INFO_FUNC_PTR logPtr,
                      void*              userData);
 
-void
-StunPrint(void*              userData,
+FUNC_DECL void StunPrint(void*              userData,
           STUN_INFO_FUNC_PTR Log_cb,
           StunInfoCategory_T category,
           const char*        fmt,

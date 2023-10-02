@@ -90,13 +90,13 @@ CTEST(turnmessage, encode_integrity)
   StunMessage stunMsg, decodeStunMsg;
 
   unsigned char           stunBuf[120];
-  struct sockaddr_storage a,b;
+  struct socket_addr a,b;
 
-  sockaddr_initFromString( (struct sockaddr*)&a,
+  sockaddr_initFromString( (struct socket_addr*)&a,
                            "85.166.136.226:19608" );
 
 
-  sockaddr_initFromString( (struct sockaddr*)&b,
+  sockaddr_initFromString( (struct socket_addr*)&b,
                            "93.93.96.202:53762" );
 
 
@@ -159,8 +159,8 @@ CTEST(turnmessage, decode_integrity)
 {
 
   StunMessage stunMsg;
-  int         keyLen = 16;
-  char        md5[keyLen];
+  const int         keyLen = 16;
+  char        md5[16];
 
 
 

@@ -15,12 +15,12 @@
 #define  TEST_IPv6_ADDR
 
 static StunMsgId               LastTransId;
-static struct sockaddr_storage LastAddress;
+static struct socket_addr LastAddress;
 
 StunResult_T stunResult;
 
-struct sockaddr_storage stunServerAddr;
-struct sockaddr_storage mappedAddr;
+struct socket_addr stunServerAddr;
+struct socket_addr mappedAddr;
 
 STUN_CLIENT_DATA* stunInstance;
 #define STUN_TICK_INTERVAL_MS 50
@@ -32,7 +32,7 @@ SendRawStun(void*                  ctx,
             int                    sockfd,
             const uint8_t*         buf,
             int                    len,
-            const struct sockaddr* addr,
+            const struct socket_addr* addr,
             int                    proto,
             bool                   useRelay,
             uint8_t                ttl)
@@ -48,7 +48,7 @@ SendRawStun(void*                  ctx,
 
   memcpy(&LastTransId, &buf[8], STUN_MSG_ID_SIZE);
 
-  sockaddr_copy( (struct sockaddr*)&LastAddress, addr );
+  sockaddr_copy( (struct socket_addr*)&LastAddress, addr );
 
   sockaddr_toString(addr, addr_str, SOCKADDR_MAX_STRLEN, true);
 
@@ -66,11 +66,11 @@ CTEST(stunserver, Encode_decode)
   uint8_t stunBuff[STUN_MAX_PACKET_SIZE];
   stunlib_createId(&stunId);
 
-  sockaddr_initFromString( (struct sockaddr*)&mappedAddr,
+  sockaddr_initFromString( (struct socket_addr*)&mappedAddr,
                            "193.200.93.152:3478" );
   CreateConnectivityBindingResp(&stunMsg,
                                 stunId,
-                                (struct sockaddr*)&mappedAddr,
+                                (struct socket_addr*)&mappedAddr,
                                 1,
                                 1,
                                 0,
@@ -152,8 +152,8 @@ CTEST(stunserver, HandleReq_InValid)
 CTEST(stunserver, SendResp_Valid)
 {
   bool                    useRelay = false;
-  struct sockaddr_storage mappedAddr,servAddr;
-  sockaddr_initFromString( (struct sockaddr*)&servAddr,
+  struct socket_addr mappedAddr,servAddr;
+  sockaddr_initFromString( (struct socket_addr*)&servAddr,
                            "193.200.93.152:3478" );
 
   StunClient_Alloc(&stunInstance);
@@ -161,9 +161,9 @@ CTEST(stunserver, SendResp_Valid)
                                                        0,  /* sockhandle */
                                                        LastTransId,
                                                        "pem",
-                                                       (struct sockaddr*)&
+                                                       (struct socket_addr*)&
                                                        mappedAddr,
-                                                       (struct sockaddr*)&
+                                                       (struct socket_addr*)&
                                                        servAddr,
                                                        0,
                                                        0,
@@ -176,15 +176,15 @@ CTEST(stunserver, SendResp_Valid)
                                                        0,
                                                        useRelay,
                                                        0) );
-  sockaddr_initFromString( (struct sockaddr*)&mappedAddr,
+  sockaddr_initFromString( (struct socket_addr*)&mappedAddr,
                            "193.200.93.152:3478" );
   ASSERT_TRUE( StunServer_SendConnectivityBindingResp(stunInstance,
                                                       0,
                                                       LastTransId,
                                                       "pem",
-                                                      (struct sockaddr*)&
+                                                      (struct socket_addr*)&
                                                       mappedAddr,
-                                                      (struct sockaddr*)&
+                                                      (struct socket_addr*)&
                                                       servAddr,
                                                       2,
                                                       3,
@@ -203,11 +203,11 @@ CTEST(stunserver, SendResp_Valid)
 CTEST(stunserver, SendResp_Valid_IPv6)
 {
   bool                    useRelay = false;
-  struct sockaddr_storage mappedAddr,servAddr;
+  struct socket_addr mappedAddr,servAddr;
   sockaddr_reset(&servAddr);
   sockaddr_reset(&mappedAddr);
 
-  sockaddr_initFromString( (struct sockaddr*)&servAddr,
+  sockaddr_initFromString( (struct socket_addr*)&servAddr,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234" );
 
   StunClient_Alloc(&stunInstance);
@@ -215,9 +215,9 @@ CTEST(stunserver, SendResp_Valid_IPv6)
                                                        0,  /* sockhandle */
                                                        LastTransId,
                                                        "pem",
-                                                       (struct sockaddr*)&
+                                                       (struct socket_addr*)&
                                                        mappedAddr,
-                                                       (struct sockaddr*)&
+                                                       (struct socket_addr*)&
                                                        servAddr,
                                                        0,
                                                        0,
@@ -230,15 +230,15 @@ CTEST(stunserver, SendResp_Valid_IPv6)
                                                        0,
                                                        useRelay,
                                                        0) );
-  sockaddr_initFromString( (struct sockaddr*)&mappedAddr,
+  sockaddr_initFromString( (struct socket_addr*)&mappedAddr,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234" );
   ASSERT_TRUE( StunServer_SendConnectivityBindingResp(stunInstance,
                                                       0,
                                                       LastTransId,
                                                       "pem",
-                                                      (struct sockaddr*)&
+                                                      (struct socket_addr*)&
                                                       mappedAddr,
-                                                      (struct sockaddr*)&
+                                                      (struct socket_addr*)&
                                                       servAddr,
                                                       0,
                                                       0,

@@ -4,7 +4,7 @@
 
 #ifndef TURN_INTERN_H
 #define TURN_INTERN_H
-
+#include "macro.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,7 +48,7 @@ typedef enum {
 
 /* Internal message formats */
 typedef struct {
-  struct sockaddr_storage serverAddr;
+  struct socket_addr serverAddr;
   char                    username[STUN_MSG_MAX_USERNAME_LENGTH];
   char                    password[STUN_MSG_MAX_PASSWORD_LENGTH];
   int                     ai_family;    /* AF_INET/AF_INET6 */
@@ -84,7 +84,7 @@ typedef enum {
 typedef struct
 {
   uint16_t                channelNumber;
-  struct sockaddr_storage peerTrnspAddr;
+  struct socket_addr peerTrnspAddr;
   bool                    createPermission;
 }
 TurnChannelBindInfo_T;
@@ -92,7 +92,7 @@ TurnChannelBindInfo_T;
 typedef struct
 {
   uint32_t                numberOfPeers;
-  struct sockaddr_storage peerTrnspAddr[TURN_MAX_PERMISSION_PEERS];
+  struct socket_addr peerTrnspAddr[TURN_MAX_PERMISSION_PEERS];
 }
 TurnCreatePermissionInfo_T;
 
@@ -129,9 +129,9 @@ struct TURN_INSTANCE_DATA
   bool                  redirected;
   /* returned in allocate resp */
 
-  struct sockaddr_storage srflxAddr;
-  struct sockaddr_storage relAddr_IPv4;
-  struct sockaddr_storage relAddr_IPv6;
+  struct socket_addr srflxAddr;
+  struct socket_addr relAddr_IPv4;
+  struct socket_addr relAddr_IPv6;
 
   uint32_t                   lifetime; /* Seconds */
   TurnChannelBindInfo_T      channelBindInfo;
@@ -170,8 +170,7 @@ typedef struct
 TURN_STATE_TABLE;
 
 
-void
-TurnClientSimulateSig(void*       instance,
+FUNC_DECL void TurnClientSimulateSig(void*       instance,
                       TURN_SIGNAL sig);
 
 

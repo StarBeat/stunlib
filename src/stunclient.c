@@ -24,13 +24,6 @@
  *
  ******************************************************************************/
 
-
-#include <netinet/ip.h>
-#include <netinet/ip6.h>
-#include <netinet/ip_icmp.h>
-#include <netinet/icmp6.h>
-#include <arpa/inet.h>
-
 #include "stunclient.h"
 
 #include "stun_intern.h"
@@ -306,8 +299,8 @@ StunClient_HandleTick(STUN_CLIENT_DATA* clientData,
 int32_t
 StunClient_startBindTransaction(STUN_CLIENT_DATA*      clientData,
                                 void*                  userCtx,
-                                const struct sockaddr* serverAddr,
-                                const struct sockaddr* baseAddr,
+                                const struct socket_addr* serverAddr,
+                                const struct socket_addr* baseAddr,
                                 int                    proto,
                                 bool                   useRelay,
                                 TransactionAttributes* transAttr,
@@ -323,8 +316,8 @@ StunClient_startBindTransaction(STUN_CLIENT_DATA*      clientData,
 
   memset( &m, 0, sizeof(m) );
   m.userCtx = userCtx;
-  sockaddr_copy( (struct sockaddr*)&m.serverAddr, serverAddr );
-  sockaddr_copy( (struct sockaddr*)&m.baseAddr,   baseAddr );
+  sockaddr_copy( (struct socket_addr*)&m.serverAddr, serverAddr );
+  sockaddr_copy( (struct socket_addr*)&m.baseAddr,   baseAddr );
   memcpy( &m.transAttr, transAttr, sizeof(TransactionAttributes) );
 
   m.proto    = proto;
@@ -346,8 +339,8 @@ StunClient_startBindTransaction(STUN_CLIENT_DATA*      clientData,
 void
 StunClient_startSTUNTrace(STUN_CLIENT_DATA*      clientData,
                           void*                  userCtx,
-                          const struct sockaddr* serverAddr,
-                          const struct sockaddr* baseAddr,
+                          const struct socket_addr* serverAddr,
+                          const struct socket_addr* baseAddr,
                           bool                   useRelay,
                           uint8_t                ttl,
                           TransactionAttributes* transAttr,
@@ -361,8 +354,8 @@ StunClient_startSTUNTrace(STUN_CLIENT_DATA*      clientData,
 
   memset( &m, 0, sizeof(m) );
   m.userCtx = userCtx;
-  sockaddr_copy( (struct sockaddr*)&m.serverAddr, serverAddr );
-  sockaddr_copy( (struct sockaddr*)&m.baseAddr,   baseAddr );
+  sockaddr_copy( (struct socket_addr*)&m.serverAddr, serverAddr );
+  sockaddr_copy( (struct socket_addr*)&m.baseAddr,   baseAddr );
   memcpy( &m.transAttr, transAttr, sizeof(TransactionAttributes) );
   m.useRelay = useRelay;
   m.ttl      = ttl;
@@ -385,7 +378,7 @@ StunClient_startSTUNTrace(STUN_CLIENT_DATA*      clientData,
 void
 StunClient_HandleIncResp(STUN_CLIENT_DATA*      clientData,
                          const StunMessage*     msg,
-                         const struct sockaddr* srcAddr)
+                         const struct socket_addr* srcAddr)
 {
   if (clientData == NULL)
   {
@@ -412,7 +405,7 @@ StunClient_HandleIncResp(STUN_CLIENT_DATA*      clientData,
       }
       gettimeofday(&trans->stop[idx], NULL);
       memcpy( &m.stunRespMessage, msg, sizeof(m.stunRespMessage) );
-      sockaddr_copy( (struct sockaddr*)&m.srcAddr, srcAddr );
+      sockaddr_copy( (struct socket_addr*)&m.srcAddr, srcAddr );
       StunClientMain(clientData, i, StunMsgToInternalStunSig(msg), (void*)&m);
       return;
     }
@@ -426,7 +419,7 @@ StunClient_HandleIncResp(STUN_CLIENT_DATA*      clientData,
 
 void
 StunClient_HandleICMP(STUN_CLIENT_DATA*      clientData,
-                      const struct sockaddr* srcAddr,
+                      const struct socket_addr* srcAddr,
                       uint32_t               ICMPtype)
 {
   if (clientData == NULL)
@@ -440,8 +433,8 @@ StunClient_HandleICMP(STUN_CLIENT_DATA*      clientData,
             "<STUNTRACE> StunClient_HandleICMP: Got ICMP type: %i\n ",
             ICMPtype);
 
-  if ( isTimeExceeded(ICMPtype, srcAddr->sa_family) ||
-       isDstUnreachable(ICMPtype,srcAddr->sa_family) )
+  if ( isTimeExceeded(ICMPtype, srcAddr->isv4) ||
+       isDstUnreachable(ICMPtype,srcAddr->isv4) )
   {
     for (int i = 0; i < STUN_MAX_TRANSACTIONS; i++)
     {
@@ -454,7 +447,7 @@ StunClient_HandleICMP(STUN_CLIENT_DATA*      clientData,
         StunRespStruct m;
         gettimeofday(&trans->stop[trans->retransmits], NULL);
         /* memcpy(&m.stunRespMessage, msg, sizeof(m.stunRespMessage)); */
-        sockaddr_copy( (struct sockaddr*)&m.srcAddr, srcAddr );
+        sockaddr_copy( (struct socket_addr*)&m.srcAddr, srcAddr );
         m.ICMPtype = ICMPtype;
         m.ttl      = clientData->traceResult.currentTTL;
         StunClientMain(clientData, i, STUN_SIGNAL_ICMPResp, (void*)&m);
@@ -792,7 +785,7 @@ SendStunReq(STUN_TRANSACTION_DATA* trans,
                                 trans->stunBindReq.transAttr.sockhandle,
                                 stunReqMsgBuf,
                                 stunReqMsgBufLen,
-                                (struct sockaddr*)&trans->stunBindReq.serverAddr,
+                                (struct socket_addr*)&trans->stunBindReq.serverAddr,
                                 trans->stunBindReq.proto,
                                 trans->stunBindReq.useRelay,
                                 trans->stunBindReq.ttl);
@@ -830,7 +823,7 @@ StunClientFsm(STUN_TRANSACTION_DATA* trans,
 static void
 RetransmitLastReq(STUN_TRANSACTION_DATA*   trans,
                   StunMessage*             stunReqMsg,
-                  struct sockaddr_storage* destAddr)
+                  struct socket_addr* destAddr)
 {
 
   /* We need to recalculate Integrity Attribute due to the change in reqCnt*/
@@ -870,7 +863,7 @@ RetransmitLastReq(STUN_TRANSACTION_DATA*   trans,
                               trans->stunBindReq.transAttr.sockhandle,
                               stunReqMsgBuf,
                               stunReqMsgBufLen,
-                              (struct sockaddr*)destAddr,
+                              (struct socket_addr*)destAddr,
                               trans->stunBindReq.proto,
                               trans->stunBindReq.useRelay,
                               trans->stunBindReq.ttl);
@@ -983,7 +976,7 @@ CommonRetryTimeoutHandler(STUN_TRANSACTION_DATA* trans,
                                                         **/
   {
     char peer [SOCKADDR_MAX_STRLEN] = {0,};
-    sockaddr_toString( (struct sockaddr*) &trans->stunBindReq.serverAddr, peer,
+    sockaddr_toString( (struct socket_addr*) &trans->stunBindReq.serverAddr, peer,
                        sizeof (peer), true );
 
     StunPrint(client->logUserData, client->Log_cb, StunInfoCategory_Trace,
@@ -1059,13 +1052,13 @@ StoreBindResp(STUN_TRANSACTION_DATA* trans,
   {
     if (resp->xorMappedAddress.familyType == STUN_ADDR_IPv4Family)
     {
-      sockaddr_initFromIPv4Int( (struct sockaddr_in*)&trans->rflxAddr,
+      sockaddr_initFromIPv4Int(&trans->rflxAddr,
                                 htonl(resp->xorMappedAddress.addr.v4.addr),
                                 htons(resp->xorMappedAddress.addr.v4.port) );
     }
     else if (resp->xorMappedAddress.familyType == STUN_ADDR_IPv6Family)
     {
-      sockaddr_initFromIPv6Int( (struct sockaddr_in6*)&trans->rflxAddr,
+      sockaddr_initFromIPv6Int( &trans->rflxAddr,
                                 resp->xorMappedAddress.addr.v6.addr,
                                 htons(resp->xorMappedAddress.addr.v6.port) );
     }
@@ -1089,7 +1082,7 @@ StoreBindResp(STUN_TRANSACTION_DATA* trans,
 
 static void
 BindRespCallback(STUN_TRANSACTION_DATA* trans,
-                 const struct sockaddr* srcAddr)
+                 const struct socket_addr* srcAddr)
 {
   STUN_CLIENT_DATA*  client = trans->client;
   char               ip_str [SOCKADDR_MAX_STRLEN];
@@ -1102,14 +1095,14 @@ BindRespCallback(STUN_TRANSACTION_DATA* trans,
 
   res.stunResult = StunResult_BindOk;
 
-  sockaddr_copy( (struct sockaddr*)&res.rflxAddr,
-                 (struct sockaddr*)&trans->rflxAddr );
+  sockaddr_copy( (struct socket_addr*)&res.rflxAddr,
+                 (struct socket_addr*)&trans->rflxAddr );
 
-  sockaddr_copy( (struct sockaddr*)&res.srcAddr,
+  sockaddr_copy( (struct socket_addr*)&res.srcAddr,
                  srcAddr );
 
-  sockaddr_copy( (struct sockaddr*)&res.dstBaseAddr,
-                 (struct sockaddr*)&trans->stunBindReq.baseAddr );
+  sockaddr_copy( (struct socket_addr*)&res.dstBaseAddr,
+                 (struct socket_addr*)&trans->stunBindReq.baseAddr );
 
   /* So did we loose a packet, or got an answer to the first response?*/
 
@@ -1123,7 +1116,7 @@ BindRespCallback(STUN_TRANSACTION_DATA* trans,
   StunPrint( client->logUserData, client->Log_cb, StunInfoCategory_Info,
              "<STUNCLIENT:%02d> BindResp from src: %s",
              trans->inst,
-             sockaddr_toString( (struct sockaddr*) &res.srcAddr, ip_str,
+             sockaddr_toString( (struct socket_addr*) &res.srcAddr, ip_str,
                                 SOCKADDR_MAX_STRLEN,
                                 true ) );
 
@@ -1136,7 +1129,7 @@ BindRespCallback(STUN_TRANSACTION_DATA* trans,
 
 static void
 ICMPRespCallback(STUN_TRANSACTION_DATA* trans,
-                 const struct sockaddr* srcAddr)
+                 const struct socket_addr* srcAddr)
 {
   STUN_CLIENT_DATA*  client = trans->client;
   char               ip_str [SOCKADDR_MAX_STRLEN];
@@ -1153,13 +1146,13 @@ ICMPRespCallback(STUN_TRANSACTION_DATA* trans,
 
   res.rtt         = getRTTvalue(trans);
   res.retransmits = trans->retransmits;
-  sockaddr_copy( (struct sockaddr*)&res.srcAddr,
+  sockaddr_copy( (struct socket_addr*)&res.srcAddr,
                  srcAddr );
 
   StunPrint( client->logUserData, client->Log_cb, StunInfoCategory_Info,
              "<STUNCLIENT:%02d> ICMPResp from src: %s",
              trans->inst,
-             sockaddr_toString( (struct sockaddr*) &res.srcAddr, ip_str,
+             sockaddr_toString( (struct socket_addr*) &res.srcAddr, ip_str,
                                 SOCKADDR_MAX_STRLEN,
                                 true ) );
 
@@ -1243,7 +1236,7 @@ StunState_WaitBindResp(STUN_TRANSACTION_DATA* trans,
     trans->stunBindReq.ttl = pMsgIn->ttl;
     if ( StoreBindResp(trans, pResp) )
     {
-      BindRespCallback(trans, (struct sockaddr*)&pMsgIn->srcAddr);
+      BindRespCallback(trans, (struct socket_addr*)&pMsgIn->srcAddr);
     }
     else
     {
@@ -1259,7 +1252,7 @@ StunState_WaitBindResp(STUN_TRANSACTION_DATA* trans,
     StunRespStruct* pMsgIn = (StunRespStruct*)payload;
     trans->ICMPtype        = pMsgIn->ICMPtype;
     trans->stunBindReq.ttl = pMsgIn->ttl;
-    ICMPRespCallback(trans, (struct sockaddr*)&pMsgIn->srcAddr);
+    ICMPRespCallback(trans, (struct socket_addr*)&pMsgIn->srcAddr);
     trans->stats.ICMPReceived++;
     SetNextState(trans, STUN_STATE_Idle);
     break;
@@ -1324,7 +1317,7 @@ StunState_Cancelled(STUN_TRANSACTION_DATA* trans,
     trans->stunBindReq.ttl = pMsgIn->ttl;
     if ( StoreBindResp(trans, pResp) )
     {
-      BindRespCallback(trans, (struct sockaddr*)&pMsgIn->srcAddr);
+      BindRespCallback(trans, (struct socket_addr*)&pMsgIn->srcAddr);
     }
     else
     {

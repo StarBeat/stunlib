@@ -19,7 +19,7 @@
 /* static uint32_t StunDefaultTimeoutList[STUNCLIENT_MAX_RETRANSMITS */
 /* ] = {100, 0}; */
 static StunMsgId               LastTransId;
-static struct sockaddr_storage LastAddress;
+static struct socket_addr LastAddress;
 
 
 static bool runningAsIPv6;
@@ -31,7 +31,7 @@ TurnCallBackData_T latestResult;
 uint8_t            latestBuf[1600];
 size_t             latestBufLen;
 
-struct sockaddr_storage turnServerAddr;
+struct socket_addr turnServerAddr;
 TURN_INSTANCE_DATA*     pInst;
 
 
@@ -50,7 +50,7 @@ TurnStatusCallBack(void*               ctx,
 static void
 SendRawStun(const uint8_t*         buf,
             size_t                 len,
-            const struct sockaddr* addr,
+            const struct socket_addr* addr,
             void*                  ctx)
 {
   (void) ctx;
@@ -61,7 +61,7 @@ SendRawStun(const uint8_t*         buf,
 
   memcpy(&LastTransId, &buf[8], STUN_MSG_ID_SIZE);
 
-  sockaddr_copy( (struct sockaddr*)&LastAddress, addr );
+  sockaddr_copy( (struct socket_addr*)&LastAddress, addr );
   if (len < sizeof latestBuf)
   {
     memcpy(latestBuf, buf, len);
@@ -78,7 +78,7 @@ static int
 StartAllocateTransaction()
 {
   runningAsIPv6 = false;
-  sockaddr_initFromString( (struct sockaddr*)&turnServerAddr,
+  sockaddr_initFromString( (struct socket_addr*)&turnServerAddr,
                            "158.38.48.10:3478" );
   /* kick off turn */
   return TurnClient_StartAllocateTransaction(&pInst,
@@ -86,7 +86,7 @@ StartAllocateTransaction()
                                              NULL,
                                              "test",
                                              NULL,
-                                             (struct sockaddr*)&turnServerAddr,
+                                             (struct socket_addr*)&turnServerAddr,
                                              "pem",
                                              "pem",
                                              0,
@@ -100,8 +100,8 @@ StartAllocateTransaction()
 static int
 StartAllocateTransaction_IPv6()
 {
-  struct sockaddr_storage addr;
-  sockaddr_initFromString( (struct sockaddr*)&addr,"158.38.48.10:3478" );
+  struct socket_addr addr;
+  sockaddr_initFromString( (struct socket_addr*)&addr,"158.38.48.10:3478" );
   runningAsIPv6 = true;
   /* kick off turn */
   return TurnClient_StartAllocateTransaction(&pInst,
@@ -109,7 +109,7 @@ StartAllocateTransaction_IPv6()
                                              NULL,
                                              "test",
                                              NULL,
-                                             (struct sockaddr*)&addr,
+                                             (struct socket_addr*)&addr,
                                              "pem",
                                              "pem",
                                              AF_INET6,
@@ -124,7 +124,7 @@ StartAllocateTransaction_IPv6()
 static int
 StartSSODAAllocateTransaction()
 {
-  sockaddr_initFromString( (struct sockaddr*)&turnServerAddr,
+  sockaddr_initFromString( (struct socket_addr*)&turnServerAddr,
                            "158.38.v8.10:3478" );
 
   /* kick off turn */
@@ -133,7 +133,7 @@ StartSSODAAllocateTransaction()
                                              NULL,
                                              "test",
                                              NULL,
-                                             (struct sockaddr*)&turnServerAddr,
+                                             (struct socket_addr*)&turnServerAddr,
                                              "pem",
                                              "pem",
                                              AF_INET + AF_INET6,
@@ -480,8 +480,8 @@ CTEST(turnclient, WaitAllocRespNotAut_Timeout)
   /* 1 Tick */
   TurnClient_HandleTick(pInst);
   ASSERT_TRUE( turnResult == TurnResult_Empty);
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastAddress,
-                               (struct sockaddr*)&turnServerAddr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastAddress,
+                               (struct socket_addr*)&turnServerAddr ) );
   /* 2 Tick */
   TurnClient_HandleTick(pInst);
   ASSERT_TRUE(turnResult == TurnResult_Empty);
@@ -667,11 +667,11 @@ CTEST(turnclient, WaitAllocRespNotAut_AllocRspOk_IPv6)
 CTEST(turnclient, WaitAllocRespNotAutSSODA_AllocRspOk)
 {
   int                     ctx;
-  struct sockaddr_storage relayIPv4;
-  struct sockaddr_storage relayIPv6;
-  sockaddr_initFromString( (struct sockaddr*)&relayIPv4,
+  struct socket_addr relayIPv4;
+  struct socket_addr relayIPv6;
+  sockaddr_initFromString( (struct socket_addr*)&relayIPv4,
                            "193.200.99.152:42000" );
-  sockaddr_initFromString( (struct sockaddr*)&relayIPv6,
+  sockaddr_initFromString( (struct socket_addr*)&relayIPv6,
                            "[2001:470:dc88:2:226:18ff:fe92:6d53]:16896" );
 
   ctx = StartAllocateTransaction();
@@ -679,15 +679,15 @@ CTEST(turnclient, WaitAllocRespNotAutSSODA_AllocRspOk)
   SimSSODAAllocResp(ctx, true, true, true);
   ASSERT_TRUE( turnResult == TurnResult_AllocOk);
 
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&latestResult.TurnResultData.
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&latestResult.TurnResultData.
                                AllocResp.relAddrIPv4,
-                               (struct sockaddr*)&relayIPv4 ) );
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&latestResult.TurnResultData.
+                               (struct socket_addr*)&relayIPv4 ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&latestResult.TurnResultData.
                                AllocResp.relAddrIPv6,
-                               (struct sockaddr*)&relayIPv6 ) );
-  ASSERT_FALSE( sockaddr_alike( (struct sockaddr*)&latestResult.TurnResultData.
+                               (struct socket_addr*)&relayIPv6 ) );
+  ASSERT_FALSE( sockaddr_alike( (struct socket_addr*)&latestResult.TurnResultData.
                                 AllocResp.relAddrIPv4,
-                                (struct sockaddr*)&relayIPv6 ) );
+                                (struct socket_addr*)&relayIPv6 ) );
 
   TurnClient_Deallocate(pInst);
   Sim_RefreshResp(ctx);
@@ -715,7 +715,7 @@ CTEST(turnclient, WaitAllocRespNotAut_AllocRspErr_AltServer)
   ASSERT_TRUE( turnResult == TurnResult_AllocOk);
 
   ASSERT_TRUE( TurnClient_hasBeenRedirected(pInst) );
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastAddress,
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastAddress,
                                TurnClient_getRedirectedServerAddr(pInst) ) );
 
   TurnClient_Deallocate(pInst);
@@ -744,7 +744,7 @@ CTEST(turnclient, WaitAllocRespNotAut_AllocRspErr_AltServer_IPv6)
   ASSERT_TRUE( turnResult == TurnResult_AllocOk);
 
   ASSERT_TRUE( TurnClient_hasBeenRedirected(pInst) );
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastAddress,
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastAddress,
                                TurnClient_getRedirectedServerAddr(pInst) ) );
 
   TurnClient_Deallocate(pInst);
@@ -808,7 +808,7 @@ CTEST(turnclient, WaitAllocRespNotAut_AllocRspErr_Ok)
   SimAllocResp(ctx, true, true, true, runningAsIPv6, false, false);
   ASSERT_TRUE(turnResult == TurnResult_AllocOk);
   ASSERT_FALSE( TurnClient_hasBeenRedirected(pInst) );
-  ASSERT_FALSE( sockaddr_alike( (struct sockaddr*)&LastAddress,
+  ASSERT_FALSE( sockaddr_alike( (struct socket_addr*)&LastAddress,
                                 TurnClient_getRedirectedServerAddr(pInst) ) );
   TurnClient_Deallocate(pInst);
   Sim_RefreshResp(ctx);
@@ -829,7 +829,7 @@ CTEST(turnclient, WaitAllocRespNotAut_AllocRspErr_Ok_IPv6)
   SimAllocResp(ctx, true, true, true, runningAsIPv6, false, false);
   ASSERT_TRUE(turnResult == TurnResult_AllocOk);
   ASSERT_FALSE( TurnClient_hasBeenRedirected(pInst) );
-  ASSERT_FALSE( sockaddr_alike( (struct sockaddr*)&LastAddress,
+  ASSERT_FALSE( sockaddr_alike( (struct socket_addr*)&LastAddress,
                                 TurnClient_getRedirectedServerAddr(pInst) ) );
   TurnClient_Deallocate(pInst);
   Sim_RefreshResp(ctx);
@@ -1154,16 +1154,16 @@ CTEST(turnclient, Allocated_StaleNonce_IPv6)
 
 CTEST(turnclient, Allocated_ChanBindReqOk)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
   ASSERT_TRUE( TurnClient_StartChannelBindReq(pInst, 0x4001,
-                                              (struct sockaddr*)&peerIp) );
+                                              (struct socket_addr*)&peerIp) );
   ASSERT_FALSE( TurnClient_StartChannelBindReq(pInst, 0x4001,
-                                               (struct sockaddr*)&peerIp) );
+                                               (struct socket_addr*)&peerIp) );
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1183,17 +1183,17 @@ CTEST(turnclient, Allocated_ChanBindReqOk)
 
 CTEST(turnclient, Allocated_ChanBindReqOk_IPv6)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234" );
 
   ctx = GotoAllocatedState_IPv6(12);
   ASSERT_TRUE( TurnClient_StartChannelBindReq(pInst, 0x4001,
-                                              (struct sockaddr*)&peerIp) );
+                                              (struct socket_addr*)&peerIp) );
   ASSERT_FALSE( TurnClient_StartChannelBindReq(pInst, 0x4001,
-                                               (struct sockaddr*)&peerIp) );
+                                               (struct socket_addr*)&peerIp) );
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1213,13 +1213,13 @@ CTEST(turnclient, Allocated_ChanBindReqOk_IPv6)
 
 CTEST(turnclient, Allocated_ChanBindReq_fail_num)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
   ASSERT_FALSE( TurnClient_StartChannelBindReq(pInst, 0x3001,
-                                               (struct sockaddr*)&peerIp) );
+                                               (struct socket_addr*)&peerIp) );
 
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
@@ -1233,13 +1233,13 @@ CTEST(turnclient, Allocated_ChanBindReq_fail_num)
 
 CTEST(turnclient, Allocated_ChanBindReq_fail_ip)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
   ASSERT_FALSE( TurnClient_StartChannelBindReq(pInst, 0x4001,
-                                               (struct sockaddr*)NULL) );
+                                               (struct socket_addr*)NULL) );
 
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
@@ -1253,12 +1253,12 @@ CTEST(turnclient, Allocated_ChanBindReq_fail_ip)
 
 CTEST(turnclient, Allocated_ChanBindRefresh)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1277,13 +1277,13 @@ CTEST(turnclient, Allocated_ChanBindRefresh)
 
 CTEST(turnclient, Allocated_ChanBindRefresh_IPv6)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234" );
 
   ctx = GotoAllocatedState_IPv6(12);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1304,12 +1304,12 @@ CTEST(turnclient, Allocated_ChanBindRefresh_IPv6)
 
 CTEST(turnclient, Allocated_ChanBindErr)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindErrorResponseMsg, 4, 4);
   TurnClient_HandleTick(pInst);
@@ -1322,13 +1322,13 @@ CTEST(turnclient, Allocated_ChanBindErr)
 
 CTEST(turnclient, Allocated_ChanBindErr_IPv6)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234" );
 
   ctx = GotoAllocatedState_IPv6(12);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindErrorResponseMsg, 4, 4);
   TurnClient_HandleTick(pInst);
@@ -1342,22 +1342,22 @@ CTEST(turnclient, Allocated_ChanBindErr_IPv6)
 
 CTEST(turnclient, Allocated_CreatePermissionReqOk)
 {
-  struct sockaddr_storage  peerIp[6];
-  struct sockaddr_storage* p_peerIp[6];
+  struct socket_addr  peerIp[6];
+  struct socket_addr* p_peerIp[6];
   int                      ctx;
   uint32_t                 i;
   TurnStats_T              stats;
 
   for (i = 0; i < sizeof(peerIp) / sizeof(peerIp[0]); i++)
   {
-    sockaddr_initFromString( (struct sockaddr*)&peerIp[i],"192.168.5.22:1234" );
+    sockaddr_initFromString( (struct socket_addr*)&peerIp[i],"192.168.5.22:1234" );
     p_peerIp[i] = &peerIp[i];
   }
 
   ctx = GotoAllocatedState(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       sizeof(peerIp) / sizeof(peerIp[0]),
-                                      (const struct sockaddr**)p_peerIp);
+                                      (const struct socket_addr**)p_peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_CreatePermissionResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1377,23 +1377,23 @@ CTEST(turnclient, Allocated_CreatePermissionReqOk)
 
 CTEST(turnclient, Allocated_CreatePermissionReqOk_IPv6)
 {
-  struct sockaddr_storage peerIp;
-  struct sockaddr_storage peerIp_2;
-  struct sockaddr*        p_peerIp[2];
+  struct socket_addr peerIp;
+  struct socket_addr peerIp_2;
+  struct socket_addr*        p_peerIp[2];
   int                     ctx;
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234\0" );
-  sockaddr_initFromString( (struct sockaddr*)&peerIp_2,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp_2,
                            "[2a02:fe0:c410:cb31:e4d:e43f:fecb:bf6b]:1234\0" );
-  p_peerIp[0] = (struct sockaddr*)&peerIp;
-  p_peerIp[1] = (struct sockaddr*)&peerIp_2;
+  p_peerIp[0] = (struct socket_addr*)&peerIp;
+  p_peerIp[1] = (struct socket_addr*)&peerIp_2;
 
 
   ctx = GotoAllocatedState_IPv6(12);
   ASSERT_TRUE( TurnClient_StartCreatePermissionReq(pInst,
                                                    2,
-                                                   (const struct sockaddr**)
+                                                   (const struct socket_addr**)
                                                    p_peerIp) );
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_CreatePermissionResponseMsg, 0, 0);
@@ -1406,13 +1406,13 @@ CTEST(turnclient, Allocated_CreatePermissionReqOk_IPv6)
 
 CTEST(turnclient, Allocated_CreatePermissionReq_no_IP)
 {
-  struct sockaddr_storage  peerIp[6];
-  struct sockaddr_storage* p_peerIp[6];
+  struct socket_addr  peerIp[6];
+  struct socket_addr* p_peerIp[6];
   uint32_t                 i;
 
   for (i = 0; i < sizeof(peerIp) / sizeof(peerIp[0]); i++)
   {
-    sockaddr_initFromString( (struct sockaddr*)&peerIp[i],"192.168.5.22:1234" );
+    sockaddr_initFromString( (struct socket_addr*)&peerIp[i],"192.168.5.22:1234" );
     p_peerIp[i] = &peerIp[i];
   }
   p_peerIp[4] = NULL;
@@ -1421,27 +1421,27 @@ CTEST(turnclient, Allocated_CreatePermissionReq_no_IP)
   ASSERT_FALSE( TurnClient_StartCreatePermissionReq(pInst,
                                                     sizeof(peerIp) /
                                                     sizeof(peerIp[0]),
-                                                    (const struct sockaddr**)
+                                                    (const struct socket_addr**)
                                                     p_peerIp) );
 }
 
 CTEST(turnclient, Allocated_CreatePermissionRefresh)
 {
-  struct sockaddr_storage  peerIp[6];
-  struct sockaddr_storage* p_peerIp[6];
+  struct socket_addr  peerIp[6];
+  struct socket_addr* p_peerIp[6];
   int                      ctx;
   uint32_t                 i;
 
   for (i = 0; i < sizeof(peerIp) / sizeof(peerIp[0]); i++)
   {
-    sockaddr_initFromString( (struct sockaddr*)&peerIp[i],"192.168.5.22:1234" );
+    sockaddr_initFromString( (struct socket_addr*)&peerIp[i],"192.168.5.22:1234" );
     p_peerIp[i] = &peerIp[i];
   }
 
   ctx = GotoAllocatedState(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       sizeof(peerIp) / sizeof(peerIp[0]),
-                                      (const struct sockaddr**)p_peerIp);
+                                      (const struct socket_addr**)p_peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_CreatePermissionResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1460,23 +1460,23 @@ CTEST(turnclient, Allocated_CreatePermissionRefresh)
 
 CTEST(turnclient, Allocated_CreatePermissionRefresh_IPv6)
 {
-  struct sockaddr_storage peerIp;
-  struct sockaddr_storage peerIp_2;
-  struct sockaddr*        p_peerIp[2];
+  struct socket_addr peerIp;
+  struct socket_addr peerIp_2;
+  struct socket_addr*        p_peerIp[2];
   int                     ctx;
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234\0" );
-  sockaddr_initFromString( (struct sockaddr*)&peerIp_2,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp_2,
                            "[2a02:fe0:c410:cb31:e4d:e43f:fecb:bf6b]:1234\0" );
-  p_peerIp[0] = (struct sockaddr*)&peerIp;
-  p_peerIp[1] = (struct sockaddr*)&peerIp_2;
+  p_peerIp[0] = (struct socket_addr*)&peerIp;
+  p_peerIp[1] = (struct socket_addr*)&peerIp_2;
 
 
   ctx = GotoAllocatedState_IPv6(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       2,
-                                      (const struct sockaddr**)p_peerIp);
+                                      (const struct socket_addr**)p_peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_CreatePermissionResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1495,21 +1495,21 @@ CTEST(turnclient, Allocated_CreatePermissionRefresh_IPv6)
 
 CTEST(turnclient, Allocated_CreatePermissionErr)
 {
-  struct sockaddr_storage  peerIp[3];
-  struct sockaddr_storage* p_peerIp[3];
+  struct socket_addr  peerIp[3];
+  struct socket_addr* p_peerIp[3];
   int                      ctx;
   uint32_t                 i;
 
   for (i = 0; i < sizeof(peerIp) / sizeof(peerIp[0]); i++)
   {
-    sockaddr_initFromString( (struct sockaddr*)&peerIp[i],"192.168.5.22:1234" );
+    sockaddr_initFromString( (struct socket_addr*)&peerIp[i],"192.168.5.22:1234" );
     p_peerIp[i] = &peerIp[i];
   }
 
   ctx = GotoAllocatedState(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       sizeof(peerIp) / sizeof(peerIp[0]),
-                                      (const struct sockaddr**)p_peerIp);
+                                      (const struct socket_addr**)p_peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx,
                                STUN_MSG_CreatePermissionErrorResponseMsg,
@@ -1524,22 +1524,22 @@ CTEST(turnclient, Allocated_CreatePermissionErr)
 
 CTEST(turnclient, Allocated_CreatePermissionErr_IPv6)
 {
-  struct sockaddr_storage peerIp;
-  struct sockaddr_storage peerIp_2;
-  struct sockaddr*        p_peerIp[2];
+  struct socket_addr peerIp;
+  struct socket_addr peerIp_2;
+  struct socket_addr*        p_peerIp[2];
   int                     ctx;
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234\0" );
-  sockaddr_initFromString( (struct sockaddr*)&peerIp_2,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp_2,
                            "[2a02:fe0:c410:cb31:e4d:e43f:fecb:bf6b]:1234\0" );
-  p_peerIp[0] = (struct sockaddr*)&peerIp;
-  p_peerIp[1] = (struct sockaddr*)&peerIp_2;
+  p_peerIp[0] = (struct socket_addr*)&peerIp;
+  p_peerIp[1] = (struct socket_addr*)&peerIp_2;
 
   ctx = GotoAllocatedState_IPv6(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       2,
-                                      (const struct sockaddr**)p_peerIp);
+                                      (const struct socket_addr**)p_peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx,
                                STUN_MSG_CreatePermissionErrorResponseMsg,
@@ -1556,22 +1556,22 @@ CTEST(turnclient, Allocated_CreatePermissionErr_IPv6)
 
 CTEST(turnclient, Allocated_CreatePermissionReqAndChannelBind)
 {
-  struct sockaddr_storage  peerIp[6];
-  struct sockaddr_storage* p_peerIp[6];
+  struct socket_addr  peerIp[6];
+  struct socket_addr* p_peerIp[6];
   int                      ctx;
   uint32_t                 i;
 
   for (i = 0; i < sizeof(peerIp) / sizeof(peerIp[0]); i++)
   {
-    sockaddr_initFromString( (struct sockaddr*)&peerIp[i],"192.168.5.22:1234" );
+    sockaddr_initFromString( (struct socket_addr*)&peerIp[i],"192.168.5.22:1234" );
     p_peerIp[i] = &peerIp[i];
   }
 
   ctx = GotoAllocatedState(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       sizeof(peerIp) / sizeof(peerIp[0]),
-                                      (const struct sockaddr**)p_peerIp);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp[0]);
+                                      (const struct socket_addr**)p_peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp[0]);
 
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_CreatePermissionResponseMsg, 0, 0);
@@ -1589,25 +1589,25 @@ CTEST(turnclient, Allocated_CreatePermissionReqAndChannelBind)
 
 CTEST(turnclient, Allocated_CreatePermissionReqAndChannelBind_IPv6)
 {
-  struct sockaddr_storage peerIp;
-  struct sockaddr_storage peerIp_2;
-  struct sockaddr*        p_peerIp[2];
+  struct socket_addr peerIp;
+  struct socket_addr peerIp_2;
+  struct socket_addr*        p_peerIp[2];
   int                     ctx;
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234\0" );
-  sockaddr_initFromString( (struct sockaddr*)&peerIp_2,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp_2,
                            "[2a02:fe0:c410:cb31:e4d:e43f:fecb:bf6b]:1234\0" );
-  p_peerIp[0] = (struct sockaddr*)&peerIp;
-  p_peerIp[1] = (struct sockaddr*)&peerIp_2;
+  p_peerIp[0] = (struct socket_addr*)&peerIp;
+  p_peerIp[1] = (struct socket_addr*)&peerIp_2;
 
 
 
   ctx = GotoAllocatedState_IPv6(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       2,
-                                      (const struct sockaddr**)p_peerIp);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+                                      (const struct socket_addr**)p_peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
 
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_CreatePermissionResponseMsg, 0, 0);
@@ -1626,22 +1626,22 @@ CTEST(turnclient, Allocated_CreatePermissionReqAndChannelBind_IPv6)
 
 CTEST(turnclient, Allocated_CreatePermissionErrorAndChannelBind)
 {
-  struct sockaddr_storage  peerIp[6];
-  struct sockaddr_storage* p_peerIp[6];
+  struct socket_addr  peerIp[6];
+  struct socket_addr* p_peerIp[6];
   int                      ctx;
   uint32_t                 i;
 
   for (i = 0; i < sizeof(peerIp) / sizeof(peerIp[0]); i++)
   {
-    sockaddr_initFromString( (struct sockaddr*)&peerIp[i],"192.168.5.22:1234" );
+    sockaddr_initFromString( (struct socket_addr*)&peerIp[i],"192.168.5.22:1234" );
     p_peerIp[i] = &peerIp[i];
   }
 
   ctx = GotoAllocatedState(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       sizeof(peerIp) / sizeof(peerIp[0]),
-                                      (const struct sockaddr**)p_peerIp);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp[0]);
+                                      (const struct socket_addr**)p_peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp[0]);
 
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx,
@@ -1662,24 +1662,24 @@ CTEST(turnclient, Allocated_CreatePermissionErrorAndChannelBind)
 
 CTEST(turnclient, Allocated_CreatePermissionErrorAndChannelBind_IPv6)
 {
-  struct sockaddr_storage peerIp;
-  struct sockaddr_storage peerIp_2;
-  struct sockaddr*        p_peerIp[2];
+  struct socket_addr peerIp;
+  struct socket_addr peerIp_2;
+  struct socket_addr*        p_peerIp[2];
   int                     ctx;
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234\0" );
-  sockaddr_initFromString( (struct sockaddr*)&peerIp_2,
+  sockaddr_initFromString( (struct socket_addr*)&peerIp_2,
                            "[2a02:fe0:c410:cb31:e4d:e43f:fecb:bf6b]:1234\0" );
-  p_peerIp[0] = (struct sockaddr*)&peerIp;
-  p_peerIp[1] = (struct sockaddr*)&peerIp_2;
+  p_peerIp[0] = (struct socket_addr*)&peerIp;
+  p_peerIp[1] = (struct socket_addr*)&peerIp_2;
 
 
   ctx = GotoAllocatedState_IPv6(12);
   TurnClient_StartCreatePermissionReq(pInst,
                                       2,
-                                      (const struct sockaddr**)p_peerIp);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+                                      (const struct socket_addr**)p_peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
 
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx,
@@ -1862,17 +1862,17 @@ CTEST(turnclient, GetErrorReason)
 
 CTEST(turnclient, sendpacket_bound)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
 
   unsigned char buf[] =
     "123456789abcdef123456789Some data to be sendt. Here and there.\0";
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1889,7 +1889,7 @@ CTEST(turnclient, sendpacket_bound)
                                      sizeof buf,
                                      sizeof buf - 24,
                                      24,
-                                     (struct sockaddr*)&peerIp,
+                                     (struct socket_addr*)&peerIp,
                                      true) );
 
   ASSERT_TRUE(strcmp( (char*)latestBuf + 4, (char*)buf + 24 ) == 0);
@@ -1901,7 +1901,7 @@ CTEST(turnclient, sendpacket_bound)
 
 CTEST(turnclient, sendpacket_bound_no_offset)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
 
@@ -1910,10 +1910,10 @@ CTEST(turnclient, sendpacket_bound_no_offset)
   char          data[] = "Some data to be sendt. Here and there.\0";
   memcpy(buf + offset, data, sizeof data);
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -1930,7 +1930,7 @@ CTEST(turnclient, sendpacket_bound_no_offset)
                                      sizeof buf,
                                      sizeof data,
                                      offset,
-                                     (struct sockaddr*)&peerIp,
+                                     (struct socket_addr*)&peerIp,
                                      true) );
 
   ASSERT_TRUE(strcmp( (char*)latestBuf + TURN_CHANNEL_DATA_HDR_SIZE,
@@ -1944,7 +1944,7 @@ CTEST(turnclient, sendpacket_bound_no_offset)
 
 CTEST(turnclient, sendpacket_un_bound)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
 
@@ -1953,7 +1953,7 @@ CTEST(turnclient, sendpacket_un_bound)
   char          data[] = "Some data to be sendt. Here and there.\0";
   memcpy(buf + offset, data, sizeof data);
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
 
@@ -1968,7 +1968,7 @@ CTEST(turnclient, sendpacket_un_bound)
                                      sizeof buf,
                                      sizeof data,
                                      offset,
-                                     (struct sockaddr*)&peerIp,
+                                     (struct socket_addr*)&peerIp,
                                      true) );
 
   ASSERT_TRUE(strcmp( (char*)latestBuf + 36, data ) == 0);
@@ -1980,7 +1980,7 @@ CTEST(turnclient, sendpacket_un_bound)
 
 CTEST(turnclient, sendpacket_un_bound_no_offset)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
 
@@ -1989,7 +1989,7 @@ CTEST(turnclient, sendpacket_un_bound_no_offset)
   char          data[] = "Some data to be sendt. Here and there.\0";
   memcpy(buf + offset, data, sizeof data);
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
 
@@ -2004,7 +2004,7 @@ CTEST(turnclient, sendpacket_un_bound_no_offset)
                                      sizeof buf,
                                      sizeof data,
                                      offset,
-                                     (struct sockaddr*)&peerIp,
+                                     (struct socket_addr*)&peerIp,
                                      true) );
 
   ASSERT_TRUE(strcmp( (char*)latestBuf + 36, data ) == 0);
@@ -2016,7 +2016,7 @@ CTEST(turnclient, sendpacket_un_bound_no_offset)
 
 CTEST(turnclient, sendpacket_un_bound_small_buffer)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
 
@@ -2025,7 +2025,7 @@ CTEST(turnclient, sendpacket_un_bound_small_buffer)
   char          data[] = "Some data to be sendt. Here and there.\0";
   memcpy(buf + offset, data, sizeof data);
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
 
@@ -2040,7 +2040,7 @@ CTEST(turnclient, sendpacket_un_bound_small_buffer)
                                       sizeof buf,
                                       sizeof data,
                                       offset,
-                                      (struct sockaddr*)&peerIp,
+                                      (struct socket_addr*)&peerIp,
                                       true) );
 
 
@@ -2052,17 +2052,17 @@ CTEST(turnclient, sendpacket_un_bound_small_buffer)
 
 CTEST(turnclient,recievepacket_bound)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
 
   unsigned char buf[] =
     "123456789abcdef123456789Some data to be sendt. Here and there.\0";
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&peerIp);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&peerIp);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -2079,13 +2079,13 @@ CTEST(turnclient,recievepacket_bound)
                                      sizeof buf,
                                      sizeof buf - 24,
                                      24,
-                                     (struct sockaddr*)&peerIp,
+                                     (struct socket_addr*)&peerIp,
                                      true) );
 
   ASSERT_TRUE( TurnClient_ReceivePacket(pInst,
                                         latestBuf,
                                         &latestBufLen,
-                                        (struct sockaddr*)&peerIp,
+                                        (struct socket_addr*)&peerIp,
                                         sizeof peerIp,
                                         0) );
 
@@ -2102,18 +2102,18 @@ CTEST(turnclient,recievepacket_bound)
 
 CTEST(turnclient,recievepacket_bound_IPv6)
 {
-  struct sockaddr_storage addr;
+  struct socket_addr addr;
   int                     ctx;
   TurnStats_T             stats;
 
   unsigned char buf[] =
     "123456789abcdef123456789Some data to be sendt. Here and there.\0";
-  sockaddr_initFromString( (struct sockaddr*)&addr,
+  sockaddr_initFromString( (struct socket_addr*)&addr,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234\0" );
 
 
   ctx = GotoAllocatedState(12);
-  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct sockaddr*)&addr);
+  TurnClient_StartChannelBindReq(pInst, 0x4001, (struct socket_addr*)&addr);
   TurnClient_HandleTick(pInst);
   Sim_ChanBindOrPermissionResp(ctx, STUN_MSG_ChannelBindResponseMsg, 0, 0);
   TurnClient_HandleTick(pInst);
@@ -2130,13 +2130,13 @@ CTEST(turnclient,recievepacket_bound_IPv6)
                                      sizeof buf,
                                      sizeof buf - 24,
                                      24,
-                                     (struct sockaddr*)&addr,
+                                     (struct socket_addr*)&addr,
                                      true) );
 
   ASSERT_TRUE( TurnClient_ReceivePacket(pInst,
                                         latestBuf,
                                         &latestBufLen,
-                                        (struct sockaddr*)&addr,
+                                        (struct socket_addr*)&addr,
                                         sizeof addr,
                                         0) );
 
@@ -2153,7 +2153,7 @@ CTEST(turnclient,recievepacket_bound_IPv6)
 
 CTEST(turnclient, recievepacket_un_bound_error)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
 
@@ -2162,7 +2162,7 @@ CTEST(turnclient, recievepacket_un_bound_error)
   char          data[] = "Some data to be sendt. Here and there.\0";
   memcpy(buf + offset, data, sizeof data);
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
 
@@ -2177,13 +2177,13 @@ CTEST(turnclient, recievepacket_un_bound_error)
                                      sizeof buf,
                                      sizeof data,
                                      offset,
-                                     (struct sockaddr*)&peerIp,
+                                     (struct socket_addr*)&peerIp,
                                      true) );
 
   ASSERT_FALSE( TurnClient_ReceivePacket(pInst,
                                          latestBuf,
                                          &latestBufLen,
-                                         (struct sockaddr*)&peerIp,
+                                         (struct socket_addr*)&peerIp,
                                          sizeof peerIp,
                                          0) );
 
@@ -2197,7 +2197,7 @@ CTEST(turnclient, recievepacket_un_bound_error)
 
 CTEST(turnclient, recievepacket_un_bound)
 {
-  struct sockaddr_storage peerIp;
+  struct socket_addr peerIp;
   int                     ctx;
   TurnStats_T             stats;
 
@@ -2207,7 +2207,7 @@ CTEST(turnclient, recievepacket_un_bound)
   size_t        len;
   memcpy(buf + offset, data, sizeof data);
 
-  sockaddr_initFromString( (struct sockaddr*)&peerIp,"192.168.5.22:1234" );
+  sockaddr_initFromString( (struct socket_addr*)&peerIp,"192.168.5.22:1234" );
 
   ctx = GotoAllocatedState(12);
 
@@ -2221,7 +2221,7 @@ CTEST(turnclient, recievepacket_un_bound)
                                      (unsigned char*)data,
                                      sizeof buf,
                                      sizeof data,
-                                     (struct sockaddr*)&peerIp);
+                                     (struct socket_addr*)&peerIp);
   ASSERT_TRUE(len == 76);
 
 
@@ -2229,7 +2229,7 @@ CTEST(turnclient, recievepacket_un_bound)
   ASSERT_TRUE( TurnClient_ReceivePacket(pInst,
                                         buf,
                                         &len,
-                                        (struct sockaddr*)&peerIp,
+                                        (struct socket_addr*)&peerIp,
                                         sizeof peerIp,
                                         0) );
 
@@ -2242,7 +2242,7 @@ CTEST(turnclient, recievepacket_un_bound)
 
 CTEST(turnclient, recievepacket_un_bound_IPv6)
 {
-  struct sockaddr_storage addr;
+  struct socket_addr addr;
   int                     ctx;
   TurnStats_T             stats;
 
@@ -2251,7 +2251,7 @@ CTEST(turnclient, recievepacket_un_bound_IPv6)
   char          data[] = "Some data to be sendt. Here and there.\0";
   size_t        len;
   memcpy(buf + offset, data, sizeof data);
-  sockaddr_initFromString( (struct sockaddr*)&addr,
+  sockaddr_initFromString( (struct socket_addr*)&addr,
                            "[2a02:fe0:c410:cb31:e4d:e93f:fecb:bf6b]:1234\0" );
 
   ctx = GotoAllocatedState_IPv6(12);
@@ -2265,13 +2265,13 @@ CTEST(turnclient, recievepacket_un_bound_IPv6)
                                      (unsigned char*)data,
                                      sizeof buf,
                                      sizeof data,
-                                     (struct sockaddr*)&addr);
+                                     (struct socket_addr*)&addr);
   ASSERT_TRUE( len == 88);
 
   ASSERT_TRUE( TurnClient_ReceivePacket(pInst,
                                         buf,
                                         &len,
-                                        (struct sockaddr*)&addr,
+                                        (struct socket_addr*)&addr,
                                         sizeof addr,
                                         0) );
 
@@ -2321,8 +2321,8 @@ CTEST(turnclient, keepalive_IPv6)
                                      NULL) );
 
   ASSERT_TRUE( stunlib_isIndication(&message) );
-  ASSERT_TRUE( sockaddr_alike( (struct sockaddr*)&LastAddress,
-                               (struct sockaddr*)&turnServerAddr ) );
+  ASSERT_TRUE( sockaddr_alike( (struct socket_addr*)&LastAddress,
+                               (struct socket_addr*)&turnServerAddr ) );
   TurnClient_Deallocate(pInst);
   Sim_RefreshResp(ctx);
   ASSERT_TRUE(turnResult == TurnResult_RelayReleaseComplete);

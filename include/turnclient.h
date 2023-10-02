@@ -6,8 +6,8 @@
 
 
 /* #include <string.h> */
-#include <netinet/in.h>
-
+#include "xnet.h"
+#include "macro.h"
 #include "stunlib.h"   /* stun enc/dec and msg formats*/
 
 #ifdef __cplusplus
@@ -66,10 +66,10 @@ typedef enum
  */
 typedef struct
 {
-  struct sockaddr_storage activeTurnServerAddr;
-  struct sockaddr_storage srflxAddr;
-  struct sockaddr_storage relAddrIPv4;
-  struct sockaddr_storage relAddrIPv6;
+  struct socket_addr activeTurnServerAddr;
+  struct socket_addr srflxAddr;
+  struct socket_addr relAddrIPv4;
+  struct socket_addr relAddrIPv6;
   uint64_t                token;
 } TurnAllocResp;
 
@@ -105,8 +105,8 @@ typedef struct
   uint16_t                channelNumber;
   uint32_t                expiry;
   bool                    permissionsInstalled;
-  struct sockaddr_storage BoundPeerTrnspAddr;
-  struct sockaddr_storage PermPeerTrnspAddr[TURN_MAX_PERMISSION_PEERS];
+  struct socket_addr BoundPeerTrnspAddr;
+  struct socket_addr PermPeerTrnspAddr[TURN_MAX_PERMISSION_PEERS];
   uint32_t                numberOfPeers; /* in permission */
 }
 TurnStats_T;
@@ -119,7 +119,7 @@ typedef void (* TURN_SEND_FUNC)(const uint8_t*         buffer,      /* ptr to
                                 size_t                 bufLen,      /* length of
                                                                      * send
                                                                      * buffer */
-                                const struct sockaddr* dstAddr,     /* Optional,
+                                const struct socket_addr* dstAddr,     /* Optional,
                                                                      * if
                                                                      * connected
                                                                      * to socket
@@ -171,13 +171,12 @@ typedef void (* TURN_INFO_FUNC)(void*              userCtx,
  * in further calls to TurnClient_StartChannelBindReq(),
  * TurnClient_HandleIncResp().
  */
-bool
-TurnClient_StartAllocateTransaction(TURN_INSTANCE_DATA**   instp,
+FUNC_DECL bool TurnClient_StartAllocateTransaction(TURN_INSTANCE_DATA**   instp,
                                     uint32_t               tickMsec,
                                     TURN_INFO_FUNC         funcPtr,
                                     const char*            SwVerStr,
                                     void*                  userCtx,
-                                    const struct sockaddr* turnServerAddr,
+                                    const struct socket_addr* turnServerAddr,
                                     const char*            userName,
                                     const char*            password,
                                     int                    ai_family,
@@ -193,10 +192,9 @@ TurnClient_StartAllocateTransaction(TURN_INSTANCE_DATA**   instp,
  *     peerTrnspAddr    - Peer address
  *
  */
-bool
-TurnClient_StartChannelBindReq(TURN_INSTANCE_DATA*    inst,
+FUNC_DECL bool TurnClient_StartChannelBindReq(TURN_INSTANCE_DATA*    inst,
                                uint16_t               channelNumber,
-                               const struct sockaddr* peerTrnspAddr);
+                               const struct socket_addr* peerTrnspAddr);
 
 /*
  * Create a permission in turn server.  i.e. CreatePermission(List of
@@ -211,32 +209,27 @@ TurnClient_StartChannelBindReq(TURN_INSTANCE_DATA*    inst,
  * Note - Port is not used in create permission.
  *
  */
-bool
-TurnClient_StartCreatePermissionReq(TURN_INSTANCE_DATA*    inst,
+FUNC_DECL bool TurnClient_StartCreatePermissionReq(TURN_INSTANCE_DATA*    inst,
                                     uint32_t               noOfPeers,
-                                    const struct sockaddr* peerTrnspAddr[]);
+                                    const struct socket_addr* peerTrnspAddr[]);
 
 /*
  * This function must be called by the application every N msec.
  * N must have same value as in call to TurnClient_StartAllocateTransaction()
  *  instance         -  instance pointer
  */
-void
-TurnClient_HandleTick(TURN_INSTANCE_DATA* inst);
+FUNC_DECL void TurnClient_HandleTick(TURN_INSTANCE_DATA* inst);
 
 /* TURN will be active for the duration of the Call Session.
  * TurnClient_Deallocate() must be called when the session terminates
  *  inst         -  instance pointer
  */
-void
-TurnClient_Deallocate(TURN_INSTANCE_DATA* inst);
+FUNC_DECL void TurnClient_Deallocate(TURN_INSTANCE_DATA* inst);
 
 
-bool
-TurnClient_HasBoundChannel(TURN_INSTANCE_DATA* inst);
+FUNC_DECL bool TurnClient_HasBoundChannel(TURN_INSTANCE_DATA* inst);
 
-void
-TurnClient_free(TURN_INSTANCE_DATA* inst);
+FUNC_DECL void TurnClient_free(TURN_INSTANCE_DATA* inst);
 
 
 /* send packet (via turnserver) to peer
@@ -248,13 +241,12 @@ TurnClient_free(TURN_INSTANCE_DATA* inst);
  *  dataLen   - length of payload
  *  peerAddr  - destination
  */
-bool
-TurnClient_SendPacket(TURN_INSTANCE_DATA*    inst,
+FUNC_DECL bool TurnClient_SendPacket(TURN_INSTANCE_DATA*    inst,
                       uint8_t*               buf,
                       size_t                 bufSize,
                       uint32_t               dataLen,
                       uint32_t               offset,
-                      const struct sockaddr* peerAddr,
+                      const struct socket_addr* peerAddr,
                       bool                   needChannelDataPadding);
 
 /*
@@ -267,33 +259,26 @@ TurnClient_SendPacket(TURN_INSTANCE_DATA*    inst,
  *  peerAddr  - OUT: src of media if packet is a data packet
  *  reservationToken  - OUT: token to be use for rtcp allocation
  */
-bool
-TurnClient_ReceivePacket(TURN_INSTANCE_DATA* inst,
+FUNC_DECL bool TurnClient_ReceivePacket(TURN_INSTANCE_DATA* inst,
                          uint8_t*            media,
                          size_t*             length,
-                         struct sockaddr*    peerAddr,
+                         struct socket_addr*    peerAddr,
                          size_t              addrSize,
                          uint64_t*           reservationToken);
 
-bool
-TurnClient_HandleIncResp(TURN_INSTANCE_DATA* inst,
+FUNC_DECL bool TurnClient_HandleIncResp(TURN_INSTANCE_DATA* inst,
                          StunMessage*        msg,
                          uint8_t*            buf);
 
-bool
-TurnClient_hasBeenRedirected(TURN_INSTANCE_DATA* pInst);
-const struct sockaddr*
-TurnClient_getRedirectedServerAddr(TURN_INSTANCE_DATA* pInst);
+FUNC_DECL bool TurnClient_hasBeenRedirected(TURN_INSTANCE_DATA* pInst);
+FUNC_DECL const struct socket_addr* TurnClient_getRedirectedServerAddr(TURN_INSTANCE_DATA* pInst);
 
 
 
 /* management */
-void
-TurnClientGetStats(const TURN_INSTANCE_DATA* inst,
+FUNC_DECL void TurnClientGetStats(const TURN_INSTANCE_DATA* inst,
                    TurnStats_T*              Stats);
-const char*
-TurnResultToStr(TurnResult_T res);
-
+FUNC_DECL const char* TurnResultToStr(TurnResult_T res);
 
 #ifdef __cplusplus
 }

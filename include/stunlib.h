@@ -9,8 +9,8 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include "xnet.h"
+#include "macro.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -497,7 +497,7 @@ typedef void (* STUN_SENDFUNC)(void*                  ctx,
                                int                    sockHandle,
                                const uint8_t*         buffer,
                                int                    bufLen,
-                               const struct sockaddr* dstAddr,
+                               const struct socket_addr* dstAddr,
                                int                    proto,
                                bool                   useRelay,
                                const uint8_t          ttl);
@@ -512,8 +512,7 @@ typedef void (* STUN_ERR_FUNC)(const char* fmt,
 **********************/
 
 /* transaction id compare */
-bool
-stunlib_transIdIsEqual(const StunMsgId* a,
+FUNC_DECL bool stunlib_transIdIsEqual(const StunMsgId* a,
                        const StunMsgId* b);
 
 /***********************************************/
@@ -527,8 +526,7 @@ stunlib_transIdIsEqual(const StunMsgId* a,
  * \param length         payload length
  * \return               TRUE if message is a STUN message
  */
-bool
-stunlib_isStunMsg(const uint8_t* payload,
+FUNC_DECL bool stunlib_isStunMsg(const uint8_t* payload,
                   uint16_t       length);
 
 /*!
@@ -537,8 +535,7 @@ stunlib_isStunMsg(const uint8_t* payload,
  * \param payload        payload  to check (e.g. as received in RTP stream)
  * \return               TRUE if message is TURN Channel Data
  */
-bool
-stunlib_isTurnChannelData(const uint8_t* payload);
+FUNC_DECL bool stunlib_isTurnChannelData(const uint8_t* payload);
 
 
 /*!
@@ -550,8 +547,7 @@ stunlib_isTurnChannelData(const uint8_t* payload);
  * \param stream          debug stream (NULL=no debug)
  * \return                True if parsing OK.
  */
-bool
-stunlib_DecodeMessage(const uint8_t*  buf,
+FUNC_DECL bool stunlib_DecodeMessage(const uint8_t*  buf,
                       size_t          bufLen,
                       StunMessage*    message,
                       StunAtrUnknown* unknowns,
@@ -569,8 +565,7 @@ stunlib_DecodeMessage(const uint8_t*  buf,
  * \param integrityKey    Integrity key, password used to calculate integrity.
  */
 
-bool
-stunlib_checkIntegrity(const uint8_t* buf,
+FUNC_DECL bool stunlib_checkIntegrity(const uint8_t* buf,
                        size_t         bufLen,
                        StunMessage*   message,
                        uint8_t*       integrityKey,
@@ -581,8 +576,7 @@ stunlib_checkIntegrity(const uint8_t* buf,
  * \param msg            STUN message to check
  * \return               TRUE if message is a request
  */
-bool
-stunlib_isRequest(const StunMessage* msg);
+FUNC_DECL bool stunlib_isRequest(const StunMessage* msg);
 
 /*!
  * STUNLIB_isSuccessResponse() - Test if decoded stun message is a STUN success
@@ -590,8 +584,7 @@ stunlib_isRequest(const StunMessage* msg);
  * \param msg            decoded STUN message to check
  * \return               TRUE if message is a success response
  */
-bool
-stunlib_isSuccessResponse(const StunMessage* msg);
+FUNC_DECL bool stunlib_isSuccessResponse(const StunMessage* msg);
 
 /*!
  * STUNLIB_isErrorResponse() - Test if decoded stun message is a STUN error
@@ -599,8 +592,7 @@ stunlib_isSuccessResponse(const StunMessage* msg);
  * \param msg            decoded STUN message to check
  * \return               TRUE if message is an error response
  */
-bool
-stunlib_isErrorResponse(const StunMessage* msg);
+FUNC_DECL bool stunlib_isErrorResponse(const StunMessage* msg);
 
 
 /*!
@@ -609,23 +601,19 @@ stunlib_isErrorResponse(const StunMessage* msg);
  * \param msg            decoded STUN message to check
  * \return               TRUE if message is a response
  */
-bool
-stunlib_isResponse(const StunMessage* msg);
+FUNC_DECL bool stunlib_isResponse(const StunMessage* msg);
 
 /*!
  * STUNLIB_isIndication() - Test if decoded stun message is a STUN indication
  * \param msg            STUN message to check
  * \return               TRUE if message is an indication
  */
-bool
-stunlib_isIndication(const StunMessage* msg);
+FUNC_DECL bool stunlib_isIndication(const StunMessage* msg);
 
 
-uint16_t
-stunlib_StunMsgLen (const uint8_t* payload);
+FUNC_DECL uint16_t stunlib_StunMsgLen (const uint8_t* payload);
 
-unsigned int
-stunlib_decodeTurnChannelNumber(uint16_t*      channelNumber,
+FUNC_DECL unsigned int stunlib_decodeTurnChannelNumber(uint16_t*      channelNumber,
                                 uint16_t*      length,
                                 const uint8_t* buf);
 
@@ -651,8 +639,7 @@ stunlib_decodeTurnChannelNumber(uint16_t*      channelNumber,
  * \return               0 if msg encode fails, else the length of the encoded
  * message (including any padding)
  */
-uint32_t
-stunlib_encodeMessage(StunMessage*   message,
+FUNC_DECL uint32_t stunlib_encodeMessage(StunMessage*   message,
                       unsigned char* buf,
                       unsigned int   bufLen,
                       unsigned char* key,
@@ -667,8 +654,7 @@ stunlib_encodeMessage(StunMessage*   message,
  * \param buf       - Buffer to store encoded STUN message in
  * \param bufLen    - Length of encoded buffer
  */
-uint32_t
-stunlib_encodeStunKeepAliveReq(StunKeepAliveUsage usage,
+FUNC_DECL uint32_t stunlib_encodeStunKeepAliveReq(StunKeepAliveUsage usage,
                                StunMsgId*         transId,
                                uint8_t*           buf,
                                int                bufLen);
@@ -680,8 +666,7 @@ stunlib_encodeStunKeepAliveReq(StunKeepAliveUsage usage,
  * \param buf       - Buffer to store encoded STUN message in
  * \param bufLen    - Length of encoded buffer
  */
-uint32_t
-stunlib_encodeStunKeepAliveResp(StunMsgId*     transId,
+FUNC_DECL uint32_t stunlib_encodeStunKeepAliveResp(StunMsgId*     transId,
                                 StunIPAddress* srvrRflxAddr,
                                 uint8_t*       buf,
                                 int            bufLen);
@@ -695,8 +680,7 @@ stunlib_encodeStunKeepAliveResp(StunMsgId*     transId,
  * ChannelNumber/Length).
  *  \param buf              Destination
  */
-unsigned int
-stunlib_encodeTurnChannelNumber(uint16_t       channelNumber,
+FUNC_DECL unsigned int stunlib_encodeTurnChannelNumber(uint16_t       channelNumber,
                                 uint16_t       length,
                                 unsigned char* buf);
 
@@ -709,12 +693,11 @@ stunlib_encodeTurnChannelNumber(uint16_t       channelNumber,
  * \param payloadLength Len of data
  * \param dstAddr       Destination
  */
-uint32_t
-stunlib_EncodeSendIndication(uint8_t*               stunBuf,
+FUNC_DECL uint32_t stunlib_EncodeSendIndication(uint8_t*               stunBuf,
                              uint8_t*               dataBuf,
                              uint32_t               maxBufSize,
                              uint32_t               payloadLength,
-                             const struct sockaddr* dstAddr);
+                             const struct socket_addr* dstAddr);
 
 /*
  * encode stun DataIndication (note: only used by a server or for simulating
@@ -726,35 +709,30 @@ stunlib_EncodeSendIndication(uint8_t*               stunBuf,
  * \param payloadLength Len of data
  * \param dstAddr       Destination
  */
-uint32_t
-stunlib_EncodeDataIndication(uint8_t*               stunBuf,
+FUNC_DECL uint32_t stunlib_EncodeDataIndication(uint8_t*               stunBuf,
                              uint8_t*               dataBuf,
                              uint32_t               maxBufSize,
                              uint32_t               payloadLength,
-                             const struct sockaddr* dstAddr);
+                             const struct socket_addr* dstAddr);
 
 
 /***********************************************/
 /***********      utilities       **************/
 /***********************************************/
 
-void
-stun_printMessage(FILE*              stream,
+FUNC_DECL void stun_printMessage(FILE*              stream,
                   const StunMessage* pMsg);
-void
-stun_printTransId(FILE*            stream,
+FUNC_DECL void stun_printTransId(FILE*            stream,
                   const StunMsgId* pId);
 
 /* \return random turn channel number in range STUN_MIN_CHANNEL_ID..
  * STUN_MAX_CHANNEL_ID */
-uint16_t
-stunlib_createRandomTurnChanNum(void);
+FUNC_DECL uint16_t stunlib_createRandomTurnChanNum(void);
 
 /*
  * Convert decoded msgType to string
  */
-char const*
-stunlib_getMessageName(uint16_t msgType);
+FUNC_DECL char const* stunlib_getMessageName(uint16_t msgType);
 
 /*!
  * stunGetErrorReason() - Given an errorClass and number, returns standard
@@ -762,68 +740,52 @@ stunlib_getMessageName(uint16_t msgType);
  * \param errorClass
  * \param errorNumber
  */
-char const*
-stunlib_getErrorReason(uint16_t errorClass,
+FUNC_DECL char const* stunlib_getErrorReason(uint16_t errorClass,
                        uint16_t errorNumber);
 
 
-void
-stunlib_setIP4Address(StunIPAddress* pIpAdr,
+FUNC_DECL void stunlib_setIP4Address(StunIPAddress* pIpAdr,
                       uint32_t       addr,
                       uint16_t       port);
 /* Addr is 4 long. With most significant DWORD in pos 0 */
-void
-stunlib_setIP6Address(StunIPAddress* pIpAdr,
+FUNC_DECL void stunlib_setIP6Address(StunIPAddress* pIpAdr,
                       const uint8_t  addr[16],
                       const uint16_t port);
-int
-stunlib_compareIPAddresses(const StunIPAddress* pS1,
+FUNC_DECL int stunlib_compareIPAddresses(const StunIPAddress* pS1,
                            const StunIPAddress* pS2);
-void
-stunlib_printBuffer(FILE*          stream,
+FUNC_DECL void stunlib_printBuffer(FILE*          stream,
                     const uint8_t* pBuf,
                     int            len,
                     char const*    szHead);
 
 
-void
-stunlib_createId(StunMsgId* pId);
+FUNC_DECL void stunlib_createId(StunMsgId* pId);
 
-bool
-stunlib_addRealm(StunMessage* stunMsg,
+FUNC_DECL bool stunlib_addRealm(StunMessage* stunMsg,
                  const char*  realm,
                  char         padChar);
-bool
-stunlib_addRequestedTransport(StunMessage* stunMsg,
+FUNC_DECL bool stunlib_addRequestedTransport(StunMessage* stunMsg,
                               uint8_t      protocol);
-bool
-stunlib_addRequestedAddrFamily(StunMessage* stunMsg,
+FUNC_DECL bool stunlib_addRequestedAddrFamily(StunMessage* stunMsg,
                                int          sa_family);
-bool
-stunlib_addUserName(StunMessage* stunMsg,
+FUNC_DECL bool stunlib_addUserName(StunMessage* stunMsg,
                     const char*  userName,
                     char         padChar);
-bool
-stunlib_addNonce(StunMessage* stunMsg,
+FUNC_DECL bool stunlib_addNonce(StunMessage* stunMsg,
                  const char*  nonce,
                  char         padChar);
-bool
-stunlib_addSoftware(StunMessage* stunMsg,
+FUNC_DECL bool stunlib_addSoftware(StunMessage* stunMsg,
                     const char*  software,
                     char         padChar);
-bool
-stunlib_addError(StunMessage* stunMsg,
+FUNC_DECL bool stunlib_addError(StunMessage* stunMsg,
                  const char*  reasonStr,
                  uint16_t     classAndNumber,
                  char         padChar);
-bool
-stunlib_addChannelNumber(StunMessage* stunMsg,
+FUNC_DECL bool stunlib_addChannelNumber(StunMessage* stunMsg,
                          uint16_t     channelNumber);
-uint32_t
-stunlib_calculateFingerprint(const uint8_t* buf,
+FUNC_DECL uint32_t stunlib_calculateFingerprint(const uint8_t* buf,
                              size_t         len);
-bool
-stunlib_checkFingerPrint(const uint8_t* buf,
+FUNC_DECL bool stunlib_checkFingerPrint(const uint8_t* buf,
                          uint32_t       fpOffset);
 
 
@@ -836,12 +798,10 @@ stunlib_checkFingerPrint(const uint8_t* buf,
  * \param   realm     C string
  * \param   password  C string
  */
-void
-stunlib_createMD5Key(unsigned char* md5key,
+FUNC_DECL void stunlib_createMD5Key(unsigned char* md5key,
                      const char*    userName,
                      const char*    realm,
                      const char*    password);
-
 
 #ifdef __cplusplus
 }

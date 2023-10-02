@@ -10,7 +10,7 @@ elseif is_plat("linux") then
     add_defines("CTEST_SEGFAULT")
 end 
 
-set_optimize("fast")
+-- set_optimize("fastest")
 
 add_requires("xnet")
 
@@ -18,7 +18,7 @@ target("stunlib")
     set_kind("shared")
     
     add_packages("xnet")
-    
+    add_defines("XAPI_EXPORT")
     add_includedirs("include")
     add_headerfiles("include/**.h")
     add_files("src/**.c")

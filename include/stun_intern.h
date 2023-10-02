@@ -5,7 +5,11 @@
 #ifndef STUN_INTERN_H
 #define STUN_INTERN_H
 
+#ifdef _WIN32
+#include <_time.h>
+#else
 #include <sys/time.h>
+#endif
 
 #include <stunlib.h>
 #include "stuntrace.h"
@@ -34,7 +38,7 @@ typedef enum {
 
 typedef struct
 {
-  struct sockaddr_storage srcAddr;
+  struct socket_addr srcAddr;
   StunMessage             stunRespMessage;
   uint32_t                ICMPtype;
   uint32_t                ttl;
@@ -56,8 +60,8 @@ typedef enum {
 typedef struct {
   uint32_t                threadCtx;
   void*                   userCtx;
-  struct sockaddr_storage serverAddr;
-  struct sockaddr_storage baseAddr;
+  struct socket_addr serverAddr;
+  struct socket_addr baseAddr;
   bool                    useRelay;
   /* char                    ufrag[300];       / * TBD  =
    *  ICE_MAX_UFRAG_LENGTH* / */
@@ -109,7 +113,7 @@ typedef struct
   bool                  authenticated;
 
   /* returned in allocate resp */
-  struct sockaddr_storage rflxAddr;
+  struct socket_addr rflxAddr;
 
   /* timers */
   int32_t  TimerRetransmit;

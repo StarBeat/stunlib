@@ -14,10 +14,10 @@ StunStatusCallBack(void*               userCtx,
 
 bool
 isDstUnreachable(const int32_t   ICMPtype,
-                 const uint16_t addrFamily)
+                 const int isv4)
 {
-  if ( ( (ICMPtype == 3) && (addrFamily == AF_INET) )  ||
-       ( (ICMPtype == 1) && (addrFamily == AF_INET6) ) )
+  if ( ( (ICMPtype == 3) && (isv4 == 1) )  ||
+       ( (ICMPtype == 1) && (isv4 == 0) ) )
   {
     return true;
   }
@@ -26,10 +26,10 @@ isDstUnreachable(const int32_t   ICMPtype,
 
 bool
 isTimeExceeded(const int32_t   ICMPtype,
-               const uint16_t addrFamily)
+               const int isv4)
 {
-  if ( ( (ICMPtype == 11) && (addrFamily == AF_INET) )  ||
-       ( (ICMPtype == 3) && (addrFamily == AF_INET6) ) )
+  if ( ( (ICMPtype == 11) && (isv4 == 1) )  ||
+       ( (ICMPtype == 3) && (isv4 == 0) ) )
   {
     return true;
   }
@@ -39,7 +39,7 @@ isTimeExceeded(const int32_t   ICMPtype,
 
 void
 sendCallback(struct hiutResult* result,
-             struct sockaddr*   addr,
+             struct socket_addr*   addr,
              uint32_t           hop,
              uint32_t           rtt,
              uint32_t           retrans,
@@ -73,8 +73,8 @@ resartIfNotDone(struct hiutResult* result)
     }
     StunClient_startSTUNTrace( (STUN_CLIENT_DATA*)result->stunCtx,
                                result,
-                               (struct sockaddr*)&result->remoteAddr,
-                               (struct sockaddr*)&result->localAddr,
+                               (struct socket_addr*)&result->remoteAddr,
+                               (struct socket_addr*)&result->localAddr,
                                false,
                                result->currentTTL,
                                &result->transAttr,
@@ -124,8 +124,8 @@ handleStunNoAnswer(struct hiutResult* result)
 
     StunClient_startSTUNTrace( (STUN_CLIENT_DATA*)result->stunCtx,
                                result,
-                               (struct sockaddr*)&result->remoteAddr,
-                               (struct sockaddr*)&result->localAddr,
+                               (struct socket_addr*)&result->remoteAddr,
+                               (struct socket_addr*)&result->localAddr,
                                false,
                                result->currentTTL,
                                &result->transAttr,
@@ -170,8 +170,8 @@ handleStunNoAnswer(struct hiutResult* result)
 
     StunClient_startSTUNTrace( (STUN_CLIENT_DATA*)result->stunCtx,
                                result,
-                               (struct sockaddr*)&result->remoteAddr,
-                               (struct sockaddr*)&result->localAddr,
+                               (struct socket_addr*)&result->remoteAddr,
+                               (struct socket_addr*)&result->localAddr,
                                false,
                                result->currentTTL,
                                &result->transAttr,
@@ -184,12 +184,12 @@ void
 handleStunRespIcmp(struct hiutResult* result,
                    int                ICMPtype,
                    int                ttl,
-                   struct sockaddr*   srcAddr,
+                   struct socket_addr*   srcAddr,
                    int                rtt,
                    int                retransmits)
 {
   if ( (ttl == MAX_TTL) &&
-       isDstUnreachable(ICMPtype, srcAddr->sa_family) )
+       isDstUnreachable(ICMPtype, srcAddr->isv4) )
   {
     /* Part of far end alive test */
     result->remoteAlive = true;
@@ -199,8 +199,8 @@ handleStunRespIcmp(struct hiutResult* result,
 
     StunClient_startSTUNTrace( (STUN_CLIENT_DATA*)result->stunCtx,
                                result,
-                               (struct sockaddr*)&result->remoteAddr,
-                               (struct sockaddr*)&result->localAddr,
+                               (struct socket_addr*)&result->remoteAddr,
+                               (struct socket_addr*)&result->localAddr,
                                false,
                                result->currentTTL,
                                &result->transAttr,
@@ -208,7 +208,7 @@ handleStunRespIcmp(struct hiutResult* result,
                                StunStatusCallBack );
     return;
   }
-  if ( isTimeExceeded(ICMPtype, srcAddr->sa_family) )
+  if ( isTimeExceeded(ICMPtype, srcAddr->isv4) )
   {
     if (result->currentTTL < result->user_max_ttl - 1)
     {
@@ -232,8 +232,8 @@ handleStunRespIcmp(struct hiutResult* result,
 
         StunClient_startSTUNTrace( (STUN_CLIENT_DATA*)result->stunCtx,
                                    result,
-                                   (struct sockaddr*)&result->remoteAddr,
-                                   (struct sockaddr*)&result->localAddr,
+                                   (struct socket_addr*)&result->remoteAddr,
+                                   (struct socket_addr*)&result->localAddr,
                                    false,
                                    result->currentTTL,
                                    &result->transAttr,
@@ -253,7 +253,7 @@ handleStunRespIcmp(struct hiutResult* result,
     resartIfNotDone(result);
 
   }
-  else if ( isDstUnreachable(ICMPtype,srcAddr->sa_family) )
+  else if ( isDstUnreachable(ICMPtype,srcAddr->isv4) )
   {
     bool done = result->num_traces < result->max_recuring ? false : true;
 
@@ -277,8 +277,8 @@ handleStunRespIcmp(struct hiutResult* result,
 void
 handleStunRespSucsessfull(struct hiutResult* result,
                           int                ttl,
-                          struct sockaddr*   srcAddr,
-                          struct sockaddr*   rflxAddr,
+                          struct socket_addr*   srcAddr,
+                          struct socket_addr*   rflxAddr,
                           int                rtt,
                           int                retransmits)
 {
@@ -294,8 +294,8 @@ handleStunRespSucsessfull(struct hiutResult* result,
 
     StunClient_startSTUNTrace( (STUN_CLIENT_DATA*)result->stunCtx,
                                result,
-                               (struct sockaddr*)&result->remoteAddr,
-                               (struct sockaddr*)&result->localAddr,
+                               (struct socket_addr*)&result->remoteAddr,
+                               (struct socket_addr*)&result->localAddr,
                                false,
                                result->currentTTL,
                                &result->transAttr,
@@ -305,7 +305,7 @@ handleStunRespSucsessfull(struct hiutResult* result,
   }
 
   bool done = result->num_traces < result->max_recuring ? false : true;
-  if ( sockaddr_sameAddr( (struct sockaddr*)&result->remoteAddr,srcAddr ) )
+  if ( sockaddr_sameAddr( (struct socket_addr*)&result->remoteAddr,srcAddr ) )
   {
     if (result->path_max_ttl >= ttl)
     {
@@ -342,8 +342,8 @@ StunStatusCallBack(void*               userCtx,
   case StunResult_BindOk:
     handleStunRespSucsessfull( (struct hiutResult*)userCtx,
                                stunCbData->ttl,
-                               (struct sockaddr*)&stunCbData->srcAddr,
-                               (struct sockaddr*)&stunCbData->rflxAddr,
+                               (struct socket_addr*)&stunCbData->srcAddr,
+                               (struct socket_addr*)&stunCbData->rflxAddr,
                                stunCbData->rtt,
                                stunCbData->retransmits );
     break;
@@ -351,7 +351,7 @@ StunStatusCallBack(void*               userCtx,
     handleStunRespIcmp( (struct hiutResult*)userCtx,
                         stunCbData->ICMPtype,
                         stunCbData->ttl,
-                        (struct sockaddr*)&stunCbData->srcAddr,
+                        (struct socket_addr*)&stunCbData->srcAddr,
                         stunCbData->rtt,
                         stunCbData->retransmits );
     break;
@@ -366,8 +366,8 @@ StunStatusCallBack(void*               userCtx,
 int
 StunTrace_startTrace(STUN_CLIENT_DATA*      clientData,
                      void*                  userCtx,
-                     const struct sockaddr* toAddr,
-                     const struct sockaddr* fromAddr,
+                     const struct socket_addr* toAddr,
+                     const struct socket_addr* fromAddr,
                      uint32_t               sockhandle,
                      const char*            ufrag,
                      const char*            password,
@@ -393,9 +393,9 @@ StunTrace_startTrace(STUN_CLIENT_DATA*      clientData,
   result->stunCtx = clientData;
   /* Fill inn the hiut struct so we get something back in the CB */
   /* TODO: Fix the struct so we do not store information twice!! */
-  sockaddr_copy( (struct sockaddr*)&clientData->traceResult.localAddr,
+  sockaddr_copy( (struct socket_addr*)&clientData->traceResult.localAddr,
                  fromAddr );
-  sockaddr_copy( (struct sockaddr*)&clientData->traceResult.remoteAddr,
+  sockaddr_copy( (struct socket_addr*)&clientData->traceResult.remoteAddr,
                  toAddr );
 
   result->user_max_ttl         = 40;

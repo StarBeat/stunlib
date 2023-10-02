@@ -1,5 +1,5 @@
 #pragma once
-
+#include "macro.h"
 #define MAX_TTL 40
 #define MAX_CONCECUTIVE_INACTIVE 4
 
@@ -9,7 +9,7 @@
 typedef struct
 {
 
-  struct sockaddr* nodeAddr;
+  struct socket_addr* nodeAddr;
 
   uint32_t hop;
   uint32_t rtt;                           /* Rtt in microseconds */
@@ -35,7 +35,7 @@ struct hiutTTLinfo {
 struct hiutPathElement {
   bool                    gotAnswer;
   bool                    inactive;
-  struct sockaddr_storage addr;
+  struct socket_addr addr;
 };
 
 struct hiutResult {
@@ -58,8 +58,8 @@ struct hiutResult {
   int32_t path_max_ttl;                 /*got port unreachable or STUN response
                                         **/
   uint32_t                wait_ms;
-  struct sockaddr_storage localAddr;
-  struct sockaddr_storage remoteAddr;
+  struct socket_addr localAddr;
+  struct socket_addr remoteAddr;
 
 
   /* Initial Length of first STUN packet (TTL=1) */
@@ -77,19 +77,16 @@ struct hiutResult {
   STUN_TRACECB traceCb;
 };
 
-bool
-isDstUnreachable(const int32_t   ICMPtype,
-                 const uint16_t addrFamily);
+FUNC_DECL bool isDstUnreachable(const int32_t   ICMPtype,
+                 const int isv4);
 
-bool
-isTimeExceeded(const int32_t   ICMPtype,
-               const uint16_t addrFamily);
+FUNC_DECL bool isTimeExceeded(const int32_t   ICMPtype,
+               const int isv4);
 
-int
-StunTrace_startTrace(STUN_CLIENT_DATA*      clientData,
+FUNC_DECL int StunTrace_startTrace(STUN_CLIENT_DATA*      clientData,
                      void*                  userCtx,
-                     const struct sockaddr* toAddr,
-                     const struct sockaddr* fromAddr,
+                     const struct socket_addr* toAddr,
+                     const struct socket_addr* fromAddr,
                      uint32_t               sockhandle,
                      const char*            ufrag,
                      const char*            password,
